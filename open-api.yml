@@ -1,0 +1,116 @@
+openapi: 3.0.0
+info:
+  title: MailCulator API
+  description: API for managing mail queues.
+  version: 1.0.0
+paths:
+  /email-queues:
+    post:
+      summary: Create a new mail queue
+      description: This endpoint creates a new mail queue. The request should contain an email object, and upon successful creation, the server responds with a `201 Created` status and a link to the newly created mail queue.
+      operationId: createMailQueue
+      tags:
+        - Mail Queue
+      requestBody:
+        required: true
+        content:
+          application/vnd.api+json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        description: A unique identifier for the mail queue, formatted as `userID:messageUUID`.
+                        example: "user123:msg456"
+                      type:
+                        type: string
+                        description: The type of the resource, should be "email".
+                        example: "email"
+                      attributes:
+                        type: object
+                        properties:
+                          to:
+                            type: string
+                            description: The recipient of the email.
+                            example: "example@domain.com"
+                          subject:
+                            type: string
+                            description: The subject of the email.
+                            example: "Hello"
+                          bodyHTML:
+                            type: string
+                            description: The HTML content of the email.
+                            example: "<p>Hello, this is a test email.</p>"
+                          bodyText:
+                            type: string
+                            description: The plain-text content of the email.
+                            example: "Hello, this is a test email."
+                          attachments:
+                            type: array
+                            items:
+                              type: string
+                            description: A list of attachments in the email.
+                            example: ["file1.pdf", "image.png"]
+                          customHeaders:
+                            type: object
+                            additionalProperties:
+                              type: string
+                            description: Custom headers for the email.
+                            example:
+                              X-Custom-Header: "HeaderValue"
+      responses:
+        '201':
+          description: Created - The mail queue has been created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        description: The type of the resource.
+                        example: "mail-queue"
+                      id:
+                        type: string
+                        description: The unique identifier of the created mail queue, formatted as `userID:messageUUID`.
+                        example: "user123:msg456"
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            description: The URL to the newly created mail queue resource.
+                            example: "/email-queues/user123:msg456"
+        '400':
+          description: Bad Request - The request is malformed or invalid.
+        '405':
+          description: Method Not Allowed - Invalid HTTP method used.
+        '500':
+          description: Internal Server Error - Server encountered an error while processing the request.
+components:
+  schemas:
+    MailQueue:
+      type: object
+      properties:
+        type:
+          type: string
+          example: "mail-queue"
+        id:
+          type: string
+          description: "Unique identifier formatted as `userID:messageUUID`."
+          example: "user123:msg456"
+        links:
+          type: object
+          properties:
+            self:
+              type: string
+              description: "URL to the newly created resource."
+              example: "/email-queues/user123:msg456"
