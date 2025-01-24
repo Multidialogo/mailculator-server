@@ -26,7 +26,7 @@ func NewEmailQueueStorage(draftOutputPath string) *EmailQueueStorage {
 func (s *EmailQueueStorage) SaveEmailsAsEML(emails []*model.Email) error {
 	for _, email := range emails {
 		// Generate file path for the .EML file
-		filePath := filepath.Join(s.DraftOutputPath, fmt.Sprintf("%s:%s.EML", email.UserID(), email.MessageUUID()))
+		filePath := filepath.Join(s.DraftOutputPath, fmt.Sprintf("%s.EML", email.Path()))
 
 		// Open the file for writing
 		file, err := os.Create(filePath)
@@ -39,8 +39,8 @@ func (s *EmailQueueStorage) SaveEmailsAsEML(emails []*model.Email) error {
 		msg := &mail.Message{}
 		addHeadersToMessage(msg, email)
 
-		// Write the standard headers (From, To, Date, Subject) after the body and attachments
-		orderedStandardHeaders := []string{"From", "To", "Date", "Subject", "Content-Type"}
+		// Write the standard headers
+		orderedStandardHeaders := []string{"From", "Reply-To", "To", "Date", "Subject", "Content-Type"}
 
 		// Write standard headers
 		for _, key := range orderedStandardHeaders {

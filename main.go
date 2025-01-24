@@ -93,6 +93,7 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 	var emails []*model.Email
 	var userID string
 	var messageUUID string
+	var queueUUID string
 
 	for _, emailData := range emailAPI.Data {
 		// Check if the type is "email"
@@ -103,8 +104,8 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 
 		// Extract userID and messageUUID from the ID field
 		ids := strings.Split(emailData.ID, ":")
-		if len(ids) != 2 {
-			http.Error(w, "Invalid ID format, expected 'userID:messageUUID'", http.StatusBadRequest)
+		if len(ids) != 3 {
+			http.Error(w, "Invalid ID format, expected 'userID:queueUUID:messageUUID'", http.StatusBadRequest)
 			return
 		}
 
@@ -113,8 +114,8 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "User ID mismatch", http.StatusBadRequest)
 			return
 		}
-		if messageUUID != "" && messageUUID != ids[1] {
-			http.Error(w, "Message UUID mismatch", http.StatusBadRequest)
+		if queueUUID != "" && queueUUID != ids[1] {
+			http.Error(w, "Queue UUID mismatch", http.StatusBadRequest)
 			return
 		}
 
@@ -122,8 +123,11 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 		if userID == "" {
 			userID = ids[0]
 		}
+		if queueUUID == "" {
+			queueUUID = ids[1]
+		}
 		if messageUUID == "" {
-			messageUUID = ids[1]
+			messageUUID = ids[2]
 		}
 
 		attachmentPaths := make([]string, len(emailData.Attributes.Attachments))
@@ -134,6 +138,7 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 		// Create a new email using the constructor
 		email := model.NewEmail(
 			userID,
+			queueUUID,
 			messageUUID,
 			emailData.Attributes.To,
 			emailData.Attributes.Subject,
@@ -177,11 +182,11 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 			} `json:"links"`
 		}{
 			Type: "mail-queue",
-			ID:   fmt.Sprintf("%s:%s", userID, messageUUID), // UserID:MessageUUID as ID
+			ID:   fmt.Sprintf("%s:%s:%s", userID, queueUUID, messageUUID),
 			Links: struct {
 				Self string `json:"self"`
 			}{
-				Self: fmt.Sprintf("/email-queues/%s:%s", userID, messageUUID),
+				Self: fmt.Sprintf("/email-queues/%s:%s:%s", userID, queueUUID, messageUUID),
 			},
 		},
 	}

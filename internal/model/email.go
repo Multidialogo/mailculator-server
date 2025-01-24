@@ -8,6 +8,7 @@ import (
 // Email represents an immutable email with recipient, subject, body, attachments, and custom headers.
 type Email struct {
 	userID        string
+	queueUUID     string
 	messageUUID   string
 	to            string
 	subject       string
@@ -20,11 +21,11 @@ type Email struct {
 }
 
 // NewEmail creates a new immutable Email instance.
-func NewEmail(userID, messageUUID, to, subject, bodyHTML, bodyText string, attachments []string, customHeaders map[string]string, date time.Time) *Email {
-	if userID == "" || messageUUID == "" || to == "" {
-		panic("userID, messageUUID, and to cannot be empty")
+func NewEmail(userID, queueUUID, messageUUID, to, subject, bodyHTML, bodyText string, attachments []string, customHeaders map[string]string, date time.Time) *Email {
+	if userID == "" || messageUUID == "" || queueUUID == "" || to == "" {
+		panic("userID, messageUUID, queueUUID and to cannot be empty")
 	}
-	path := fmt.Sprintf("users/%s/messages/%s", userID, messageUUID)
+	path := fmt.Sprintf("users/%s/queues/%s/messages/%s", userID, queueUUID, messageUUID)
 
 	// Clone slices and maps to enforce immutability
 	clonedAttachments := make([]string, len(attachments))
@@ -37,6 +38,7 @@ func NewEmail(userID, messageUUID, to, subject, bodyHTML, bodyText string, attac
 
 	return &Email{
 		userID:        userID,
+		queueUUID:     queueUUID,
 		messageUUID:   messageUUID,
 		to:            to,
 		subject:       subject,
@@ -51,6 +53,9 @@ func NewEmail(userID, messageUUID, to, subject, bodyHTML, bodyText string, attac
 
 // UserID returns the user ID.
 func (e *Email) UserID() string { return e.userID }
+
+// QueueUUID returns the queue UUID.
+func (e *Email) QueueUUID() string { return e.queueUUID }
 
 // MessageUUID returns the message UUID.
 func (e *Email) MessageUUID() string { return e.messageUUID }

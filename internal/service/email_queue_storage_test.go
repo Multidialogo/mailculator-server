@@ -33,6 +33,7 @@ func TestEmailQueueStorage_SaveEmailsAsEML(t *testing.T) {
 	// Create a sample email model
 	email := model.NewEmail(
 		"user1",
+		"queue1",
 		"message1",
 		"recipient@test.multidialogo.it",
 		"Test Email",
@@ -53,7 +54,7 @@ func TestEmailQueueStorage_SaveEmailsAsEML(t *testing.T) {
 	require.NoError(t, err, "Failed to save email as EML")
 
 	// Verify that the EML file was created
-	emlFilePath := filepath.Join(basePath, "user1:message1.EML")
+	emlFilePath := filepath.Join(basePath, "user1:queue1:message1.EML")
 	_, err = os.Stat(emlFilePath)
 	require.NoError(t, err, "EML file was not created")
 
@@ -63,7 +64,7 @@ func TestEmailQueueStorage_SaveEmailsAsEML(t *testing.T) {
 
 	//err = os.WriteFile(filepath.Join(expectationsDir, testutils.GetCleanFunctionName(), "user1:message1.EML"), []byte(emlFileContent), 0644)
 
-	expectationEmlFileContent, err := os.ReadFile(filepath.Join(expectationsDir, testutils.GetCleanFunctionName(), "user1:message1.EML"))
+	expectationEmlFileContent, err := os.ReadFile(filepath.Join(expectationsDir, testutils.GetCleanFunctionName(), "user1:queue1:message1.EML"))
 	require.NoError(t, err, "Failed to read expectation EML file")
 
 	assert.Equal(t, string(expectationEmlFileContent), string(emlFileContent))
