@@ -16,17 +16,17 @@ import (
 )
 
 type EmailQueueStorage struct {
-	BasePath string
+	DraftOutputPath string
 }
 
-func NewEmailQueueStorage(basePath string) *EmailQueueStorage {
-	return &EmailQueueStorage{BasePath: basePath}
+func NewEmailQueueStorage(draftOutputPath string) *EmailQueueStorage {
+	return &EmailQueueStorage{DraftOutputPath: draftOutputPath}
 }
 
 func (s *EmailQueueStorage) SaveEmailsAsEML(emails []*model.Email) error {
 	for _, email := range emails {
 		// Generate file path for the .EML file
-		filePath := filepath.Join(s.BasePath, fmt.Sprintf("%s:%s.EML", email.UserID(), email.MessageUUID()))
+		filePath := filepath.Join(s.DraftOutputPath, fmt.Sprintf("%s:%s.EML", email.UserID(), email.MessageUUID()))
 
 		// Open the file for writing
 		file, err := os.Create(filePath)

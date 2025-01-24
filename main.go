@@ -8,7 +8,9 @@ import (
 	"os"
 	"strings"
 	"time"
+	"path/filepath"
 
+	"mailculator/internal/config"
 	"mailculator/internal/model"
 	"mailculator/internal/service"
 )
@@ -30,17 +32,29 @@ type EmailAPI struct {
 
 var emailQueueStorage *service.EmailQueueStorage
 
+var inputPath string
+
 // init function to initialize necessary services
 func init() {
-	// Set up the base path for storing emails as EML files
-	basePath := "./data/email_queues"
-	err := os.MkdirAll(basePath, os.ModePerm)
+	registry := config.GetRegistry()
+	basePath := registry.Get("APP_DATA_PATH")
+	draftOutputPath := filepath.Join(basePath, registry.Get("DRAFT_OUTPUT_PATH"))
+	inputPath = filepath.Join(basePath, registry.Get("INPUT_PATH"))
+
+	err := os.MkdirAll(draftOutputPath, os.ModePerm)
 	if err != nil {
-		log.Fatalf("Failed to create email storage directory: %v", err)
+		log.Fatalf("Failed to create email draft storage directory \"%s\": %v", draftOutputPath, err)
+		os.Exit(1)
+	}
+
+	err = os.MkdirAll(inputPath, os.ModePerm)
+	if err != nil {
+		log.Fatalf("Failed to create email draft storage directory \"%s\": %v", inputPath, err)
+		os.Exit(1)
 	}
 
 	// Initialize the EmailQueueStorage service
-	emailQueueStorage = service.NewEmailQueueStorage(basePath)
+	emailQueueStorage = service.NewEmailQueueStorage(draftOutputPath)
 }
 
 // main function to start the server and handle routes
@@ -112,6 +126,11 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 			messageUUID = ids[1]
 		}
 
+		attachmentPaths := make([]string, len(emailData.Attributes.Attachments))
+		for i, attachmentPath := range emailData.Attributes.Attachments {
+			attachmentPaths[i] = filepath.Join(inputPath, attachmentPath)
+		}
+
 		// Create a new email using the constructor
 		email := model.NewEmail(
 			userID,
@@ -120,7 +139,7 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 			emailData.Attributes.Subject,
 			emailData.Attributes.BodyHTML,
 			emailData.Attributes.BodyText,
-			emailData.Attributes.Attachments,
+			attachmentPaths,
 			emailData.Attributes.CustomHeaders,
 			time.Now(),
 		)

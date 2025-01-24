@@ -1,0 +1,18 @@
+{
+  "data": [
+    {
+      "id": "user123:message456",
+      "type": "email",
+      "attributes": {
+        "to": "example@example.com",
+        "subject": "Test Subject",
+        "bodyHTML": "<p>Hello, World!</p>",
+        "bodyText": "Hello, World!",
+        "attachments": ["/TestHandleMailQueue/attachment01.pdf", "/TestHandleMailQueue/attachment02.pdf"],
+        "customHeaders": {
+          "X-Custom-Header": "CustomValue"
+        }
+      }
+    }
+  ]
+}
