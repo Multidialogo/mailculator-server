@@ -82,6 +82,7 @@ func LoadFixturesFilesInInputDirectory(testPayloadDir string, testInputDir strin
 	}
 }
 
+// GenerateMessagePath generates the path based on the ID format 'userID:queueUUID:messageUUID'
 func GenerateMessagePath(id string) (string, error) {
 	// Split the ID into parts
 	parts := strings.Split(id, ":")
@@ -93,6 +94,11 @@ func GenerateMessagePath(id string) (string, error) {
 	userID := parts[0]
 	queueUUID := parts[1]
 	messageUUID := parts[2]
+
+	// Check if any part is empty
+	if userID == "" || queueUUID == "" || messageUUID == "" {
+		return "", fmt.Errorf("invalid ID format: expected 'userID:queueUUID:messageUUID'")
+	}
 
 	// Generate the new path
 	path := fmt.Sprintf("users/%s/queues/%s/messages/%s", userID, queueUUID, messageUUID)
