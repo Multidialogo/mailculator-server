@@ -1,9 +1,27 @@
 {
   "data": [
     {
-      "id": "user123:message456",
+      "id": "user123:queue456:message789",
       "type": "email",
       "attributes": {
+        "from": "sender@example.com",
+        "replyTo": "reply-to@example.com",
+        "to": "example@example.com",
+        "subject": "Test Subject",
+        "bodyHTML": "<p>Hello, World!</p>",
+        "bodyText": "Hello, World!",
+        "attachments": ["/TestHandleMailQueue/attachment01.pdf", "/TestHandleMailQueue/attachment02.pdf"],
+        "customHeaders": {
+          "X-Custom-Header": "CustomValue"
+        }
+      }
+    },
+    {
+      "id": "user123:queue456:message790",
+      "type": "email",
+      "attributes": {
+        "from": "sender@example.com",
+        "replyTo": "sender@example.com",
         "to": "example@example.com",
         "subject": "Test Subject",
         "bodyHTML": "<p>Hello, World!</p>",

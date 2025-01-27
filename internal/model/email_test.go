@@ -1,16 +1,19 @@
 package model
 
 import (
+	"mailculator/internal/testutils"
 	"reflect"
 	"testing"
-	"mailculator/internal/testutils"
 )
 
 func TestNewEmail(t *testing.T) {
 	tests := []struct {
 		name          string
 		userID        string
+		queueUUID     string
 		messageUUID   string
+		from          string
+		replyTo       string
 		to            string
 		subject       string
 		bodyHTML      string
@@ -23,7 +26,10 @@ func TestNewEmail(t *testing.T) {
 		{
 			name:          "valid email creation",
 			userID:        "user123",
-			messageUUID:   "uuid123",
+			queueUUID:     "queue456",
+			messageUUID:   "message789",
+			from:          "sender@example.com",
+			replyTo:       "replyto@example.com",
 			to:            "recipient@example.com",
 			subject:       "Subject",
 			bodyHTML:      "<h1>HTML Body</h1>",
@@ -33,36 +39,38 @@ func TestNewEmail(t *testing.T) {
 			expectPanic:   false,
 			expectedEmail: &Email{
 				userID:        "user123",
-				messageUUID:   "uuid123",
+				queueUUID:     "queue456",
+				messageUUID:   "message789",
+				from:          "sender@example.com",
+				replyTo:       "replyto@example.com",
 				to:            "recipient@example.com",
 				subject:       "Subject",
 				bodyHTML:      "<h1>HTML Body</h1>",
 				bodyText:      "Plain Text Body",
 				attachments:   []string{"file1.txt", "file2.txt"},
 				customHeaders: map[string]string{"X-Custom-Header": "HeaderValue"},
-				path:          "users/user123/messages/uuid123",
+				path:          "users/user123/queues/queue456/messages/message789",
 				date:          testutils.GetUnixEpoch(),
 			},
 		},
 		{
-			name:        "missing required fields (userID)",
-			userID:      "",
-			messageUUID: "uuid123",
+			name:        "missing required fields (from)",
+			userID:      "user123",
+			queueUUID:   "queue456",
+			messageUUID: "message789",
+			from:        "",
+			replyTo:     "replyto@example.com",
 			to:          "recipient@example.com",
 			expectPanic: true,
 		},
 		{
-			name:        "missing required fields (messageUUID)",
+			name:        "missing required fields (replyTo)",
 			userID:      "user123",
-			messageUUID: "",
+			queueUUID:   "queue456",
+			messageUUID: "message789",
+			from:        "sender@example.com",
+			replyTo:     "",
 			to:          "recipient@example.com",
-			expectPanic: true,
-		},
-		{
-			name:        "missing required fields (to)",
-			userID:      "user123",
-			messageUUID: "uuid123",
-			to:          "",
 			expectPanic: true,
 		},
 	}
@@ -77,7 +85,11 @@ func TestNewEmail(t *testing.T) {
 				}()
 			}
 
-			email := NewEmail(tt.userID, tt.messageUUID, tt.to, tt.subject, tt.bodyHTML, tt.bodyText, tt.attachments, tt.customHeaders, testutils.GetUnixEpoch())
+			email := NewEmail(
+				tt.userID, tt.queueUUID, tt.messageUUID, tt.from, tt.replyTo, tt.to,
+				tt.subject, tt.bodyHTML, tt.bodyText, tt.attachments, tt.customHeaders,
+				testutils.GetUnixEpoch(),
+			)
 
 			// Check if email matches expected values
 			if !reflect.DeepEqual(email, tt.expectedEmail) {
@@ -107,7 +119,12 @@ func TestNewEmail(t *testing.T) {
 }
 
 func TestEmailGetters(t *testing.T) {
-	email := NewEmail("user123", "uuid123", "recipient@example.com", "Subject", "<h1>HTML</h1>", "Plain Text", []string{"file1.txt"}, map[string]string{"X-Custom-Header": "HeaderValue"}, testutils.GetUnixEpoch())
+	email := NewEmail(
+		"user123", "queue456", "message789", "sender@example.com", "replyto@example.com",
+		"recipient@example.com", "Subject", "<h1>HTML</h1>", "Plain Text",
+		[]string{"file1.txt"}, map[string]string{"X-Custom-Header": "HeaderValue"},
+		testutils.GetUnixEpoch(),
+	)
 
 	tests := []struct {
 		name   string
@@ -115,12 +132,15 @@ func TestEmailGetters(t *testing.T) {
 		getter func() interface{}
 	}{
 		{"UserID", "user123", func() interface{} { return email.UserID() }},
-		{"MessageUUID", "uuid123", func() interface{} { return email.MessageUUID() }},
+		{"QueueUUID", "queue456", func() interface{} { return email.QueueUUID() }},
+		{"MessageUUID", "message789", func() interface{} { return email.MessageUUID() }},
+		{"From", "sender@example.com", func() interface{} { return email.From() }},
+		{"ReplyTo", "replyto@example.com", func() interface{} { return email.ReplyTo() }},
 		{"To", "recipient@example.com", func() interface{} { return email.To() }},
 		{"Subject", "Subject", func() interface{} { return email.Subject() }},
 		{"BodyHTML", "<h1>HTML</h1>", func() interface{} { return email.BodyHTML() }},
 		{"BodyText", "Plain Text", func() interface{} { return email.BodyText() }},
-		{"Path", "users/user123/messages/uuid123", func() interface{} { return email.Path() }},
+		{"Path", "users/user123/queues/queue456/messages/message789", func() interface{} { return email.Path() }},
 		{"Date", testutils.GetUnixEpoch(), func() interface{} { return email.Date() }},
 	}
 

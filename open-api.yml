@@ -1,73 +1,70 @@
-openapi: 3.0.0
+openapi: 3.0.1
 info:
-  title: MailCulator API
-  description: API for managing mail queues.
+  title: Mailculator API
+  description: API for managing email queues and sending emails.
   version: 1.0.0
 paths:
   /email-queues:
     post:
-      summary: Create a new mail queue
-      description: This endpoint creates a new mail queue. The request should contain an email object, and upon successful creation, the server responds with a `201 Created` status and a link to the newly created mail queue.
-      operationId: createMailQueue
-      tags:
-        - Mail Queue
+      summary: Create a new email queue
+      description: Receives email data and saves it to the mail queue.
+      operationId: createEmailQueue
       requestBody:
         required: true
         content:
-          application/vnd.api+json:
+          application/json:
             schema:
               type: object
               properties:
                 data:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        description: A unique identifier for the mail queue, formatted as `userID:messageUUID`.
-                        example: "user123:msg456"
-                      type:
-                        type: string
-                        description: The type of the resource, should be "email".
-                        example: "email"
-                      attributes:
-                        type: object
-                        properties:
-                          to:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: "ID in the format 'userID:queueUUID:messageUUID'"
+                    type:
+                      type: string
+                      enum: [email]
+                      description: "The type of the resource"
+                    attributes:
+                      type: object
+                      properties:
+                        from:
+                          type: string
+                          format: email
+                          description: "Sender of the email"
+                        replyTo:
+                          type: string
+                          format: email
+                          description: "Reply-to address"
+                        to:
+                          type: string
+                          format: email
+                          description: "Recipient of the email"
+                        subject:
+                          type: string
+                          description: "Subject of the email"
+                        bodyHTML:
+                          type: string
+                          description: "HTML body content of the email"
+                        bodyText:
+                          type: string
+                          description: "Plain text body content of the email"
+                        attachments:
+                          type: array
+                          items:
                             type: string
-                            description: The recipient of the email.
-                            example: "example@domain.com"
-                          subject:
+                            description: "Paths to attached files"
+                        customHeaders:
+                          type: object
+                          additionalProperties:
                             type: string
-                            description: The subject of the email.
-                            example: "Hello"
-                          bodyHTML:
-                            type: string
-                            description: The HTML content of the email.
-                            example: "<p>Hello, this is a test email.</p>"
-                          bodyText:
-                            type: string
-                            description: The plain-text content of the email.
-                            example: "Hello, this is a test email."
-                          attachments:
-                            type: array
-                            items:
-                              type: string
-                            description: A list of attachments in the email.
-                            example: ["file1.pdf", "image.png"]
-                          customHeaders:
-                            type: object
-                            additionalProperties:
-                              type: string
-                            description: Custom headers for the email.
-                            example:
-                              X-Custom-Header: "HeaderValue"
+                            description: "Custom headers for the email"
       responses:
         '201':
-          description: Created - The mail queue has been created successfully.
+          description: "Email queue created successfully"
           content:
-            application/json:
+            application/vnd.api+json:
               schema:
                 type: object
                 properties:
@@ -76,41 +73,48 @@ paths:
                     properties:
                       type:
                         type: string
-                        description: The type of the resource.
                         example: "mail-queue"
                       id:
                         type: string
-                        description: The unique identifier of the created mail queue, formatted as `userID:messageUUID`.
-                        example: "user123:msg456"
+                        description: "The ID of the created email queue in the format 'userID:queueUUID:messageUUID'"
                       links:
                         type: object
                         properties:
                           self:
                             type: string
-                            description: The URL to the newly created mail queue resource.
-                            example: "/email-queues/user123:msg456"
+                            description: "URL for accessing the created email queue"
+                            example: "/email-queues/{userID}:{queueUUID}:{messageUUID}"
         '400':
-          description: Bad Request - The request is malformed or invalid.
+          description: "Invalid request body or parameters"
         '405':
-          description: Method Not Allowed - Invalid HTTP method used.
+          description: "Invalid HTTP method"
         '500':
-          description: Internal Server Error - Server encountered an error while processing the request.
+          description: "Internal server error"
 components:
   schemas:
-    MailQueue:
+    Email:
       type: object
       properties:
-        type:
+        from:
           type: string
-          example: "mail-queue"
-        id:
+          format: email
+        replyTo:
           type: string
-          description: "Unique identifier formatted as `userID:messageUUID`."
-          example: "user123:msg456"
-        links:
+          format: email
+        to:
+          type: string
+          format: email
+        subject:
+          type: string
+        bodyHTML:
+          type: string
+        bodyText:
+          type: string
+        attachments:
+          type: array
+          items:
+            type: string
+        customHeaders:
           type: object
-          properties:
-            self:
-              type: string
-              description: "URL to the newly created resource."
-              example: "/email-queues/user123:msg456"
+          additionalProperties:
+            type: string

@@ -1,0 +1,19 @@
+From: sender@test.multidialogo.it
+Reply-To: no-reply@test.multidialogo.it
+To: recipient2@test.multidialogo.it
+Date: Thu, 01 Jan 1970 00:00:00 +0000
+Subject: Test Email with Reply-To
+Content-Type: multipart/mixed; boundary="message2"
+X-Custom-Header: AnotherHeaderValue
+
+--message2
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=utf-8
+
+This is another test email in plain text format.
+--message2
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset=utf-8
+
+<p>This is another test email in HTML format.</p>
+--message2--

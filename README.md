@@ -24,7 +24,13 @@ Description:
 
 To build the image:
 ```bash
-docker build -t mailculator-builder --target builder .
+ docker build --no-cache -t mailculator-builder --target builder .
+ ```
+
+To introspect the builder image:
+
+```bash
+docker run -ti --rm mailculator-builder bash
 ```
 
 ### Stage 2: Development

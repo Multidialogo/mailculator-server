@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 	"io"
+	"fmt"
 )
 
 // GetCleanFunctionName returns the clean function name without path qualification
@@ -79,4 +80,27 @@ func LoadFixturesFilesInInputDirectory(testPayloadDir string, testInputDir strin
 	if err != nil {
 		t.Fatalf("Error walking through directory: %v", err)
 	}
+}
+
+// GenerateMessagePath generates the path based on the ID format 'userID:queueUUID:messageUUID'
+func GenerateMessagePath(id string) (string, error) {
+	// Split the ID into parts
+	parts := strings.Split(id, ":")
+	if len(parts) != 3 {
+		return "", fmt.Errorf("invalid ID format: expected 'userID:queueUUID:messageUUID'")
+	}
+
+	// Extract userID, queueUUID, and messageUUID
+	userID := parts[0]
+	queueUUID := parts[1]
+	messageUUID := parts[2]
+
+	// Check if any part is empty
+	if userID == "" || queueUUID == "" || messageUUID == "" {
+		return "", fmt.Errorf("invalid ID format: expected 'userID:queueUUID:messageUUID'")
+	}
+
+	// Generate the new path
+	path := fmt.Sprintf("users/%s/queues/%s/messages/%s", userID, queueUUID, messageUUID)
+	return path, nil
 }

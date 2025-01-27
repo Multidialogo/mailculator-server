@@ -6,29 +6,15 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
-	"path/filepath"
 
+	"mailculator/internal/API"
 	"mailculator/internal/config"
 	"mailculator/internal/model"
 	"mailculator/internal/service"
 )
-
-type EmailAPI struct {
-	Data []struct {
-		ID         string `json:"id"`
-		Type       string `json:"type"`
-		Attributes struct {
-			To            string            `json:"to"`
-			Subject       string            `json:"subject"`
-			BodyHTML      string            `json:"bodyHTML"`
-			BodyText      string            `json:"bodyText"`
-			Attachments   []string          `json:"attachments"`
-			CustomHeaders map[string]string `json:"customHeaders"`
-		} `json:"attributes"`
-	} `json:"data"`
-}
 
 var emailQueueStorage *service.EmailQueueStorage
 
@@ -76,16 +62,17 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Parse the JSON request body into the EmailAPI struct
-	var emailAPI EmailAPI
+	// Parse the JSON request body into the QueueCreationAPI struct
+	var APIRequest API.QueueCreationAPI
 	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&emailAPI); err != nil {
+	if err := decoder.Decode(&APIRequest); err != nil {
 		http.Error(w, fmt.Sprintf("Error unmarshalling request body: %v", err), http.StatusBadRequest)
 		return
 	}
 
-	if len(emailAPI.Data) == 0 {
-		http.Error(w, "No email data provided", http.StatusBadRequest)
+	// Validate the request
+	if err := API.ValidateRequest(&APIRequest); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -93,28 +80,19 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 	var emails []*model.Email
 	var userID string
 	var messageUUID string
+	var queueUUID string
 
-	for _, emailData := range emailAPI.Data {
-		// Check if the type is "email"
-		if emailData.Type != "email" {
-			http.Error(w, fmt.Sprintf("Invalid type '%s', expected 'email'", emailData.Type), http.StatusBadRequest)
-			return
-		}
-
+	for _, emailData := range APIRequest.Data {
 		// Extract userID and messageUUID from the ID field
 		ids := strings.Split(emailData.ID, ":")
-		if len(ids) != 2 {
-			http.Error(w, "Invalid ID format, expected 'userID:messageUUID'", http.StatusBadRequest)
-			return
-		}
 
 		// Check if userID and messageUUID are already set and match the current ones
 		if userID != "" && userID != ids[0] {
 			http.Error(w, "User ID mismatch", http.StatusBadRequest)
 			return
 		}
-		if messageUUID != "" && messageUUID != ids[1] {
-			http.Error(w, "Message UUID mismatch", http.StatusBadRequest)
+		if queueUUID != "" && queueUUID != ids[1] {
+			http.Error(w, "Queue UUID mismatch", http.StatusBadRequest)
 			return
 		}
 
@@ -122,8 +100,11 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 		if userID == "" {
 			userID = ids[0]
 		}
+		if queueUUID == "" {
+			queueUUID = ids[1]
+		}
 		if messageUUID == "" {
-			messageUUID = ids[1]
+			messageUUID = ids[2]
 		}
 
 		attachmentPaths := make([]string, len(emailData.Attributes.Attachments))
@@ -134,7 +115,10 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 		// Create a new email using the constructor
 		email := model.NewEmail(
 			userID,
+			queueUUID,
 			messageUUID,
+			emailData.Attributes.From,
+			emailData.Attributes.ReplyTo,
 			emailData.Attributes.To,
 			emailData.Attributes.Subject,
 			emailData.Attributes.BodyHTML,
@@ -159,7 +143,7 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/vnd.api+json") // Set the correct content type
 
-	// JSON:API-compliant response
+	// JSON:APIRequest-compliant response
 	response := struct {
 		Data struct {
 			Type  string `json:"type"`
@@ -177,11 +161,11 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 			} `json:"links"`
 		}{
 			Type: "mail-queue",
-			ID:   fmt.Sprintf("%s:%s", userID, messageUUID), // UserID:MessageUUID as ID
+			ID:   fmt.Sprintf("%s:%s:%s", userID, queueUUID, messageUUID),
 			Links: struct {
 				Self string `json:"self"`
 			}{
-				Self: fmt.Sprintf("/email-queues/%s:%s", userID, messageUUID),
+				Self: fmt.Sprintf("/email-queues/%s:%s:%s", userID, queueUUID, messageUUID),
 			},
 		},
 	}
