@@ -102,9 +102,6 @@ func TestEmailQueueStorage_SaveEmailsAsEML(t *testing.T) {
 			actualEmlFileContent, err := os.ReadFile(actualEmlFilePath)
 			require.NoError(t, err, "Failed to read EML file")
 
-			// Write the actual content into the expected file (to get correct output respecting carriage returns), needs "io/ioutil")
-			//err = ioutil.WriteFile(filepath.Join(currentTestExpectationsDir, tt.expectedEMLFileName), actualEmlFileContent, 0644)
-
 			// Read expected EML content
 			expectationEmlFileContent, err := os.ReadFile(filepath.Join(currentTestExpectationsDir, tt.expectedEMLFileName))
 			require.NoError(t, err, "Failed to read expectation EML file")
