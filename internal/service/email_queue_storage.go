@@ -28,6 +28,12 @@ func (s *EmailQueueStorage) SaveEmailsAsEML(emails []*model.Email) error {
 		// Generate file path for the .EML file
 		filePath := filepath.Join(s.DraftOutputPath, fmt.Sprintf("%s.EML", email.Path()))
 
+		// Ensure the directory structure exists
+		dirPath := filepath.Dir(filePath)
+		if err := os.MkdirAll(dirPath, 0755); err != nil {
+			return fmt.Errorf("failed to create directories for EML file: %w", err)
+		}
+
 		// Open the file for writing
 		file, err := os.Create(filePath)
 		if err != nil {

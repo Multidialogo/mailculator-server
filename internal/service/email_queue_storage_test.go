@@ -54,7 +54,7 @@ func TestEmailQueueStorage_SaveEmailsAsEML(t *testing.T) {
 	require.NoError(t, err, "Failed to save email as EML")
 
 	// Verify that the EML file was created
-	emlFilePath := filepath.Join(basePath, "user1:queue1:message1.EML")
+	emlFilePath := filepath.Join(basePath, "users/user1/queues/queue1/messages/message1.EML")
 	_, err = os.Stat(emlFilePath)
 	require.NoError(t, err, "EML file was not created")
 

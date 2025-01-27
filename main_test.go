@@ -88,6 +88,11 @@ func TestHandleMailQueue(t *testing.T) {
 		t.Fatalf("Failed to unmarshal JSON: %v", err)
 	}
 
-	emlFilePath := filepath.Join(draftOutputPath, fmt.Sprintf("%s.EML", requestData.Data[0].ID))
+	messagePath, err := testutils.GenerateMessagePath(requestData.Data[0].ID)
+	if err != nil {
+		t.Fatalf("Failed to generate message path: %v", err)
+	}
+
+	emlFilePath := filepath.Join(draftOutputPath, fmt.Sprintf("%s.EML", messagePath))
 	assert.FileExists(t, emlFilePath, "Expected .eml file to exist at %s, but it does not.", emlFilePath)
 }
