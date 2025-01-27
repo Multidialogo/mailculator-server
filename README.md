@@ -19,7 +19,7 @@ Description:
 - The base image used is `golang:1.23`.
 - The `mailculator server` project is copied into the container and the necessary dependencies are downloaded using `go mod tidy` and `go mod download`.
 - The tests are run with `go test ./...` to ensure everything is correct.
-- The application is built with `go build` and the resulting binary is copied to `/usr/local/bin/mailculator`.
+- The application is built with `go build` and the resulting binary is copied to `/usr/local/bin/mailculator-server`.
 - Finally, the binary is made executable with `chmod +x`.
 
 To build the image:
