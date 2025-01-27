@@ -27,8 +27,13 @@ func TestEmailQueueStorage_SaveEmailsAsEML(t *testing.T) {
 	basePath := t.TempDir() // t.TempDir() automatically creates a temp directory
 	require.NotEmpty(t, basePath, "Temp dir should not be empty")
 
+	draftPath := filepath.Join(basePath, "draft")
+
 	// Initialize EmailQueueStorage with the base path for storing EML files
-	emailQueueStorage := NewEmailQueueStorage(basePath)
+	emailQueueStorage := NewEmailQueueStorage(
+		draftPath,
+		filepath.Join(basePath, "outbox"),
+	)
 
 	// Define the test cases (data provider)
 	tests := []struct {
@@ -94,7 +99,7 @@ func TestEmailQueueStorage_SaveEmailsAsEML(t *testing.T) {
 			require.NoError(t, err, "Failed to save email as EML")
 
 			// Verify that the EML file was created
-			actualEmlFilePath := filepath.Join(basePath, tt.expectedEMLPath)
+			actualEmlFilePath := filepath.Join(draftPath, tt.expectedEMLPath)
 			_, err = os.Stat(actualEmlFilePath)
 			require.NoError(t, err, "EML file was not created")
 

@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"mailculator/internal/model"
+	"mailculator/internal/utils"
 	"mime/multipart"
 	"mime/quotedprintable"
 	"net/mail"
@@ -12,30 +13,31 @@ import (
 	"io/ioutil"
 	"encoding/base64"
 	"net/textproto"
-	"github.com/h2non/filetype"
 )
 
 type EmailQueueStorage struct {
 	DraftOutputPath string
+	OutboxPath      string
 }
 
-func NewEmailQueueStorage(draftOutputPath string) *EmailQueueStorage {
-	return &EmailQueueStorage{DraftOutputPath: draftOutputPath}
+func NewEmailQueueStorage(draftOutputPath string, outboxPath string) *EmailQueueStorage {
+	return &EmailQueueStorage{DraftOutputPath: draftOutputPath, OutboxPath: outboxPath}
 }
 
 func (s *EmailQueueStorage) SaveEmailsAsEML(emails []*model.Email) error {
+	var filePaths []string
 	for _, email := range emails {
 		// Generate file path for the .EML file
-		filePath := filepath.Join(s.DraftOutputPath, fmt.Sprintf("%s.EML", email.Path()))
-
+		draftPath := filepath.Join(s.DraftOutputPath, fmt.Sprintf("%s.EML", email.Path()))
+		filePaths = append(filePaths, fmt.Sprintf("%s.EML", email.Path()))
 		// Ensure the directory structure exists
-		dirPath := filepath.Dir(filePath)
+		dirPath := filepath.Dir(draftPath)
 		if err := os.MkdirAll(dirPath, 0755); err != nil {
 			return fmt.Errorf("failed to create directories for EML file: %w", err)
 		}
 
 		// Open the file for writing
-		file, err := os.Create(filePath)
+		file, err := os.Create(draftPath)
 		if err != nil {
 			return fmt.Errorf("failed to create EML file: %w", err)
 		}
@@ -120,6 +122,17 @@ func (s *EmailQueueStorage) SaveEmailsAsEML(emails []*model.Email) error {
 		}
 	}
 
+	// Copy created files in outbox directory
+	for _, fileToCopyPath := range filePaths {
+		var originalFilePath string = filepath.Join(s.DraftOutputPath, fileToCopyPath)
+		var destinationFilePath string = filepath.Join(s.OutboxPath, fileToCopyPath)
+		err := utils.CopyFile(originalFilePath, destinationFilePath)
+		if err != nil {
+			return fmt.Errorf("failed to move file from %s to %s: %w", originalFilePath, destinationFilePath, err)
+		}
+		return nil
+	}
+
 	return nil
 }
 
@@ -147,7 +160,7 @@ func writePart(multipartWriter *multipart.Writer, contentType, charset, body str
 
 // Helper function to write an attachment part
 func writeAttachment(multipartWriter *multipart.Writer, path string, data []byte) error {
-	mimeType, err := detectFileMime(path)
+	mimeType, err := utils.DetectFileMime(path)
 	if err != nil {
 		return fmt.Errorf("failed to detect file mime type: %w", err)
 	}
@@ -172,44 +185,6 @@ func writeAttachment(multipartWriter *multipart.Writer, path string, data []byte
 	}
 	base64Encoder.Close()
 	return nil
-}
-
-// detectFileMime detects the MIME type of a file using file signature and extension
-func detectFileMime(path string) (string, error) {
-	// Open the file
-	file, err := os.Open(path)
-	if err != nil {
-		return "", fmt.Errorf("Error opening file: %w", err)
-	}
-	defer file.Close()
-
-	// Read the first few bytes to detect content type using filetype
-	buffer := make([]byte, 261) // Read first 261 bytes, larger buffer for better detection
-	_, err = file.Read(buffer)
-	if err != nil {
-		return "", fmt.Errorf("Error reading file: %w", err)
-	}
-
-	// Use the filetype package to detect the MIME type based on file signature
-	if kind, _ := filetype.Match(buffer); kind != filetype.Unknown {
-		return kind.MIME.Value, nil
-	}
-
-	// Fallback to extension-based detection for known types
-	ext := filepath.Ext(path)
-	switch ext {
-	case ".jpg", ".jpeg":
-		return "image/jpeg", nil
-	case ".png":
-		return "image/png", nil
-	case ".gif":
-		return "image/gif", nil
-	case ".txt":
-		return "text/plain", nil
-	}
-
-	// Return application/octet-stream if no MIME type was found
-	return "application/octet-stream", nil
 }
 
 func isHeaderInList(slice []string, item string) bool {
