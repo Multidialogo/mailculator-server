@@ -50,7 +50,7 @@ docker build -t mailculators-dev --target mailculators-dev .
 
 To run the development container:
 ```bash
-docker run -v$(pwd)/data:/var/lib/mailculators -p 8080:8080 mailculators-dev
+docker run -v$(pwd)/data:/var/lib/mailculator -p 8080:8080 mailculators-dev
 ```
 
 ### Stage 3: Production
