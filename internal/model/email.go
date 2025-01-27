@@ -10,6 +10,8 @@ type Email struct {
 	userID        string
 	queueUUID     string
 	messageUUID   string
+	from          string
+	replyTo       string
 	to            string
 	subject       string
 	bodyHTML      string
@@ -21,9 +23,9 @@ type Email struct {
 }
 
 // NewEmail creates a new immutable Email instance.
-func NewEmail(userID, queueUUID, messageUUID, to, subject, bodyHTML, bodyText string, attachments []string, customHeaders map[string]string, date time.Time) *Email {
-	if userID == "" || messageUUID == "" || queueUUID == "" || to == "" {
-		panic("userID, messageUUID, queueUUID and to cannot be empty")
+func NewEmail(userID, queueUUID, messageUUID, from, replyTo, to, subject, bodyHTML, bodyText string, attachments []string, customHeaders map[string]string, date time.Time) *Email {
+	if userID == "" || queueUUID == "" || messageUUID == "" || from == "" || replyTo == "" || to == "" {
+		panic("userID, queueUUID, messageUUID, from, replyTo, and to cannot be empty")
 	}
 	path := fmt.Sprintf("users/%s/queues/%s/messages/%s", userID, queueUUID, messageUUID)
 
@@ -40,6 +42,8 @@ func NewEmail(userID, queueUUID, messageUUID, to, subject, bodyHTML, bodyText st
 		userID:        userID,
 		queueUUID:     queueUUID,
 		messageUUID:   messageUUID,
+		from:          from,
+		replyTo:       replyTo,
 		to:            to,
 		subject:       subject,
 		bodyHTML:      bodyHTML,
@@ -59,6 +63,12 @@ func (e *Email) QueueUUID() string { return e.queueUUID }
 
 // MessageUUID returns the message UUID.
 func (e *Email) MessageUUID() string { return e.messageUUID }
+
+// From returns the sender's address.
+func (e *Email) From() string { return e.from }
+
+// ReplyTo returns the reply-to address.
+func (e *Email) ReplyTo() string { return e.replyTo }
 
 // To returns the recipient address.
 func (e *Email) To() string { return e.to }

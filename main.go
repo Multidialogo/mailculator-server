@@ -6,9 +6,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
-	"path/filepath"
 
 	"mailculator/internal/config"
 	"mailculator/internal/model"
@@ -20,6 +20,8 @@ type EmailAPI struct {
 		ID         string `json:"id"`
 		Type       string `json:"type"`
 		Attributes struct {
+			From          string            `json:"from"`
+			ReplyTo       string            `json:"replyTo"`
 			To            string            `json:"to"`
 			Subject       string            `json:"subject"`
 			BodyHTML      string            `json:"bodyHTML"`
@@ -140,6 +142,8 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 			userID,
 			queueUUID,
 			messageUUID,
+			emailData.Attributes.From,
+			emailData.Attributes.ReplyTo,
 			emailData.Attributes.To,
 			emailData.Attributes.Subject,
 			emailData.Attributes.BodyHTML,

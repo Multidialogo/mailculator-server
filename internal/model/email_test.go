@@ -12,6 +12,8 @@ func TestNewEmail(t *testing.T) {
 		userID        string
 		queueUUID     string
 		messageUUID   string
+		from          string
+		replyTo       string
 		to            string
 		subject       string
 		bodyHTML      string
@@ -26,6 +28,8 @@ func TestNewEmail(t *testing.T) {
 			userID:        "user123",
 			queueUUID:     "queue456",
 			messageUUID:   "message789",
+			from:          "sender@example.com",
+			replyTo:       "replyto@example.com",
 			to:            "recipient@example.com",
 			subject:       "Subject",
 			bodyHTML:      "<h1>HTML Body</h1>",
@@ -37,6 +41,8 @@ func TestNewEmail(t *testing.T) {
 				userID:        "user123",
 				queueUUID:     "queue456",
 				messageUUID:   "message789",
+				from:          "sender@example.com",
+				replyTo:       "replyto@example.com",
 				to:            "recipient@example.com",
 				subject:       "Subject",
 				bodyHTML:      "<h1>HTML Body</h1>",
@@ -48,35 +54,23 @@ func TestNewEmail(t *testing.T) {
 			},
 		},
 		{
-			name:        "missing required fields (userID)",
-			userID:      "",
+			name:        "missing required fields (from)",
+			userID:      "user123",
 			queueUUID:   "queue456",
 			messageUUID: "message789",
+			from:        "",
+			replyTo:     "replyto@example.com",
 			to:          "recipient@example.com",
 			expectPanic: true,
 		},
 		{
-			name:        "missing required fields (queueUUID)",
-			userID:      "user123",
-			queueUUID:   "",
-			messageUUID: "message789",
-			to:          "recipient@example.com",
-			expectPanic: true,
-		},
-		{
-			name:        "missing required fields (messageUUID)",
-			userID:      "user123",
-			queueUUID:   "queue456",
-			messageUUID: "",
-			to:          "recipient@example.com",
-			expectPanic: true,
-		},
-		{
-			name:        "missing required fields (to)",
+			name:        "missing required fields (replyTo)",
 			userID:      "user123",
 			queueUUID:   "queue456",
 			messageUUID: "message789",
-			to:          "",
+			from:        "sender@example.com",
+			replyTo:     "",
+			to:          "recipient@example.com",
 			expectPanic: true,
 		},
 	}
@@ -91,7 +85,11 @@ func TestNewEmail(t *testing.T) {
 				}()
 			}
 
-			email := NewEmail(tt.userID, tt.queueUUID, tt.messageUUID, tt.to, tt.subject, tt.bodyHTML, tt.bodyText, tt.attachments, tt.customHeaders, testutils.GetUnixEpoch())
+			email := NewEmail(
+				tt.userID, tt.queueUUID, tt.messageUUID, tt.from, tt.replyTo, tt.to,
+				tt.subject, tt.bodyHTML, tt.bodyText, tt.attachments, tt.customHeaders,
+				testutils.GetUnixEpoch(),
+			)
 
 			// Check if email matches expected values
 			if !reflect.DeepEqual(email, tt.expectedEmail) {
@@ -121,7 +119,12 @@ func TestNewEmail(t *testing.T) {
 }
 
 func TestEmailGetters(t *testing.T) {
-	email := NewEmail("user123", "queue456", "message789", "recipient@example.com", "Subject", "<h1>HTML</h1>", "Plain Text", []string{"file1.txt"}, map[string]string{"X-Custom-Header": "HeaderValue"}, testutils.GetUnixEpoch())
+	email := NewEmail(
+		"user123", "queue456", "message789", "sender@example.com", "replyto@example.com",
+		"recipient@example.com", "Subject", "<h1>HTML</h1>", "Plain Text",
+		[]string{"file1.txt"}, map[string]string{"X-Custom-Header": "HeaderValue"},
+		testutils.GetUnixEpoch(),
+	)
 
 	tests := []struct {
 		name   string
@@ -131,6 +134,8 @@ func TestEmailGetters(t *testing.T) {
 		{"UserID", "user123", func() interface{} { return email.UserID() }},
 		{"QueueUUID", "queue456", func() interface{} { return email.QueueUUID() }},
 		{"MessageUUID", "message789", func() interface{} { return email.MessageUUID() }},
+		{"From", "sender@example.com", func() interface{} { return email.From() }},
+		{"ReplyTo", "replyto@example.com", func() interface{} { return email.ReplyTo() }},
 		{"To", "recipient@example.com", func() interface{} { return email.To() }},
 		{"Subject", "Subject", func() interface{} { return email.Subject() }},
 		{"BodyHTML", "<h1>HTML</h1>", func() interface{} { return email.BodyHTML() }},

@@ -225,7 +225,11 @@ func isHeaderInList(slice []string, item string) bool {
 func addHeadersToMessage(msg *mail.Message, email *model.Email) {
 	// Set standard email headers
 	msg.Header = make(mail.Header)
-	msg.Header["From"] = []string{"no-reply@test.multidialogo.it"}
+	msg.Header["From"] = []string{email.From()}
+	// Set Reply-To header only if it differs from From
+	if email.ReplyTo() != email.From() {
+		msg.Header["Reply-To"] = []string{email.ReplyTo()}
+	}
 	msg.Header["To"] = []string{email.To()}
 	msg.Header["Date"] = []string{email.Date().Format(time.RFC1123Z)}
 	msg.Header["Subject"] = []string{email.Subject()}

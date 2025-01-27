@@ -30,42 +30,87 @@ func TestEmailQueueStorage_SaveEmailsAsEML(t *testing.T) {
 	// Initialize EmailQueueStorage with the base path for storing EML files
 	emailQueueStorage := NewEmailQueueStorage(basePath)
 
-	// Create a sample email model
-	email := model.NewEmail(
-		"user1",
-		"queue1",
-		"message1",
-		"recipient@test.multidialogo.it",
-		"Test Email",
-		"<p>This is a test email in HTML format.</p>",
-		"This is a test email in plain text format.",
-		[]string{
-			filepath.Join(fixturesDir, testutils.GetCleanFunctionName(), "test_attachment.txt"),
-			filepath.Join(fixturesDir, testutils.GetCleanFunctionName(), "doge.jpg"),
+	// Define the test cases (data provider)
+	tests := []struct {
+		name                string
+		email               *model.Email
+		expectedEMLPath     string
+		expectedEMLFileName string
+	}{
+		{
+			name: "Valid email",
+			email: model.NewEmail(
+				"user1",
+				"queue1",
+				"message1",
+				"sender@test.multidialogo.it",
+				"sender@test.multidialogo.it",
+				"recipient@test.multidialogo.it",
+				"Test Email",
+				"<p>This is a test email in HTML format.</p>",
+				"This is a test email in plain text format.",
+				[]string{
+					filepath.Join(fixturesDir, testutils.GetCleanFunctionName(), "test_attachment.txt"),
+					filepath.Join(fixturesDir, testutils.GetCleanFunctionName(), "doge.jpg"),
+				},
+				map[string]string{
+					"X-Custom-Header": "CustomHeaderValue",
+				},
+				testutils.GetUnixEpoch(),
+			),
+			expectedEMLPath:     "users/user1/queues/queue1/messages/message1.EML",
+			expectedEMLFileName: "user1:queue1:message1.EML",
 		},
-		map[string]string{
-			"X-Custom-Header": "CustomHeaderValue",
+		{
+			name: "Valid email with Reply-To",
+			email: model.NewEmail(
+				"user1",
+				"queue1",
+				"message2",
+				"sender@test.multidialogo.it",
+				"no-reply@test.multidialogo.it",
+				"recipient2@test.multidialogo.it",
+				"Test Email with Reply-To",
+				"<p>This is another test email in HTML format.</p>",
+				"This is another test email in plain text format.",
+				[]string{},
+				map[string]string{
+					"X-Custom-Header": "AnotherHeaderValue",
+				},
+				testutils.GetUnixEpoch(),
+			),
+			expectedEMLPath:     "users/user1/queues/queue1/messages/message2.EML",
+			expectedEMLFileName: "user1:queue1:message2.EML",
 		},
-		testutils.GetUnixEpoch(),
-	)
+	}
 
-	// Save the email as an EML file
-	err := emailQueueStorage.SaveEmailsAsEML([]*model.Email{email})
-	require.NoError(t, err, "Failed to save email as EML")
+	currentTestExpectationsDir := filepath.Join(expectationsDir, testutils.GetCleanFunctionName())
 
-	// Verify that the EML file was created
-	emlFilePath := filepath.Join(basePath, "users/user1/queues/queue1/messages/message1.EML")
-	_, err = os.Stat(emlFilePath)
-	require.NoError(t, err, "EML file was not created")
+	// Execute the test cases
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Save the email as an EML file
+			err := emailQueueStorage.SaveEmailsAsEML([]*model.Email{tt.email})
+			require.NoError(t, err, "Failed to save email as EML")
 
-	// Read the contents of the EML file
-	emlFileContent, err := os.ReadFile(emlFilePath)
-	require.NoError(t, err, "Failed to read EML file")
+			// Verify that the EML file was created
+			actualEmlFilePath := filepath.Join(basePath, tt.expectedEMLPath)
+			_, err = os.Stat(actualEmlFilePath)
+			require.NoError(t, err, "EML file was not created")
 
-	//err = os.WriteFile(filepath.Join(expectationsDir, testutils.GetCleanFunctionName(), "user1:message1.EML"), []byte(emlFileContent), 0644)
+			// Read the contents of the EML file
+			actualEmlFileContent, err := os.ReadFile(actualEmlFilePath)
+			require.NoError(t, err, "Failed to read EML file")
 
-	expectationEmlFileContent, err := os.ReadFile(filepath.Join(expectationsDir, testutils.GetCleanFunctionName(), "user1:queue1:message1.EML"))
-	require.NoError(t, err, "Failed to read expectation EML file")
+			// Write the actual content into the expected file (to get correct output respecting carriage returns), needs "io/ioutil")
+			//err = ioutil.WriteFile(filepath.Join(currentTestExpectationsDir, tt.expectedEMLFileName), actualEmlFileContent, 0644)
 
-	assert.Equal(t, string(expectationEmlFileContent), string(emlFileContent))
+			// Read expected EML content
+			expectationEmlFileContent, err := os.ReadFile(filepath.Join(currentTestExpectationsDir, tt.expectedEMLFileName))
+			require.NoError(t, err, "Failed to read expectation EML file")
+
+			// Compare the contents
+			assert.Equal(t, string(expectationEmlFileContent), string(actualEmlFileContent))
+		})
+	}
 }

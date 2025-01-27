@@ -4,6 +4,8 @@
       "id": "user123:queue456:message789",
       "type": "email",
       "attributes": {
+        "from": "sender@example.com",
+        "replyTo": "reply-to@example.com",
         "to": "example@example.com",
         "subject": "Test Subject",
         "bodyHTML": "<p>Hello, World!</p>",
@@ -18,6 +20,8 @@
       "id": "user123:queue456:message790",
       "type": "email",
       "attributes": {
+        "from": "sender@example.com",
+        "replyTo": "sender@example.com",
         "to": "example@example.com",
         "subject": "Test Subject",
         "bodyHTML": "<p>Hello, World!</p>",
