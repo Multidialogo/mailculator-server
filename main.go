@@ -10,27 +10,11 @@ import (
 	"strings"
 	"time"
 
+	"mailculator/internal/API"
 	"mailculator/internal/config"
 	"mailculator/internal/model"
 	"mailculator/internal/service"
 )
-
-type EmailAPI struct {
-	Data []struct {
-		ID         string `json:"id"`
-		Type       string `json:"type"`
-		Attributes struct {
-			From          string            `json:"from"`
-			ReplyTo       string            `json:"replyTo"`
-			To            string            `json:"to"`
-			Subject       string            `json:"subject"`
-			BodyHTML      string            `json:"bodyHTML"`
-			BodyText      string            `json:"bodyText"`
-			Attachments   []string          `json:"attachments"`
-			CustomHeaders map[string]string `json:"customHeaders"`
-		} `json:"attributes"`
-	} `json:"data"`
-}
 
 var emailQueueStorage *service.EmailQueueStorage
 
@@ -78,16 +62,17 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Parse the JSON request body into the EmailAPI struct
-	var emailAPI EmailAPI
+	// Parse the JSON request body into the QueueCreationAPI struct
+	var APIRequest API.QueueCreationAPI
 	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&emailAPI); err != nil {
+	if err := decoder.Decode(&APIRequest); err != nil {
 		http.Error(w, fmt.Sprintf("Error unmarshalling request body: %v", err), http.StatusBadRequest)
 		return
 	}
 
-	if len(emailAPI.Data) == 0 {
-		http.Error(w, "No email data provided", http.StatusBadRequest)
+	// Validate the request
+	if err := API.ValidateRequest(&APIRequest); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -97,7 +82,7 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 	var messageUUID string
 	var queueUUID string
 
-	for _, emailData := range emailAPI.Data {
+	for _, emailData := range APIRequest.Data {
 		// Check if the type is "email"
 		if emailData.Type != "email" {
 			http.Error(w, fmt.Sprintf("Invalid type '%s', expected 'email'", emailData.Type), http.StatusBadRequest)
@@ -168,7 +153,7 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/vnd.api+json") // Set the correct content type
 
-	// JSON:API-compliant response
+	// JSON:APIRequest-compliant response
 	response := struct {
 		Data struct {
 			Type  string `json:"type"`

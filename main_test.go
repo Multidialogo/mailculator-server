@@ -96,3 +96,173 @@ func TestHandleMailQueue(t *testing.T) {
 	emlFilePath := filepath.Join(draftOutputPath, fmt.Sprintf("%s.EML", messagePath))
 	assert.FileExists(t, emlFilePath, "Expected .eml file to exist at %s, but it does not.", emlFilePath)
 }
+
+func TestHandleMailQueueInvalidMethod(t *testing.T) {
+	// Create a new HTTP request with an invalid method (GET instead of POST)
+	req, err := http.NewRequest(http.MethodGet, "/email-queues", nil)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/vnd.api+json")
+
+	// Create a recorder to capture the HTTP response
+	rr := httptest.NewRecorder()
+
+	// Call the handler
+	handler := http.HandlerFunc(handleMailQueue)
+	handler.ServeHTTP(rr, req)
+
+	// Assert the response code is 405 Method Not Allowed
+	if rr.Code != http.StatusMethodNotAllowed {
+		t.Errorf("Expected status 405, got %d", rr.Code)
+	}
+}
+
+func TestHandleMailQueueMissingData(t *testing.T) {
+	// Create a request with missing email data
+	requestPayload := []byte(`{"data": []}`)
+	req, err := http.NewRequest(http.MethodPost, "/email-queues", bytes.NewBuffer(requestPayload))
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/vnd.api+json")
+
+	// Create a recorder to capture the HTTP response
+	rr := httptest.NewRecorder()
+
+	// Call the handler
+	handler := http.HandlerFunc(handleMailQueue)
+	handler.ServeHTTP(rr, req)
+
+	// Assert the response code is 400 Bad Request (missing email data)
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("Expected status 400, got %d", rr.Code)
+	}
+}
+
+func TestHandleMailQueueInvalidJSON(t *testing.T) {
+	// Create an invalid JSON request (malformed JSON)
+	requestPayload := []byte(`{data: []}`)
+	req, err := http.NewRequest(http.MethodPost, "/email-queues", bytes.NewBuffer(requestPayload))
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/vnd.api+json")
+
+	// Create a recorder to capture the HTTP response
+	rr := httptest.NewRecorder()
+
+	// Call the handler
+	handler := http.HandlerFunc(handleMailQueue)
+	handler.ServeHTTP(rr, req)
+
+	// Assert the response code is 400 Bad Request (invalid JSON)
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("Expected status 400, got %d", rr.Code)
+	}
+}
+
+func TestHandleMailQueueInvalidIDFormat(t *testing.T) {
+	// Create a request with an invalid ID format (not "userID:queueUUID:messageUUID")
+	requestPayload := []byte(`
+	{
+		"data": [
+			{
+				"id": "invalid-id-format",
+				"type": "email",
+				"attributes": {
+					"from": "test@example.com",
+					"to": "recipient@example.com",
+					"subject": "Test Subject"
+				}
+			}
+		]
+	}`)
+	req, err := http.NewRequest(http.MethodPost, "/email-queues", bytes.NewBuffer(requestPayload))
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/vnd.api+json")
+
+	// Create a recorder to capture the HTTP response
+	rr := httptest.NewRecorder()
+
+	// Call the handler
+	handler := http.HandlerFunc(handleMailQueue)
+	handler.ServeHTTP(rr, req)
+
+	// Assert the response code is 400 Bad Request (invalid ID format)
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("Expected status 400, got %d", rr.Code)
+	}
+}
+
+func TestHandleMailQueueInvalidType(t *testing.T) {
+	// Create a request with an invalid type (not "email")
+	requestPayload := []byte(`
+	{
+		"data": [
+			{
+				"id": "user1:queue1:message1",
+				"type": "invalid-type",
+				"attributes": {
+					"from": "test@example.com",
+					"to": "recipient@example.com",
+					"subject": "Test Subject"
+				}
+			}
+		]
+	}`)
+	req, err := http.NewRequest(http.MethodPost, "/email-queues", bytes.NewBuffer(requestPayload))
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/vnd.api+json")
+
+	// Create a recorder to capture the HTTP response
+	rr := httptest.NewRecorder()
+
+	// Call the handler
+	handler := http.HandlerFunc(handleMailQueue)
+	handler.ServeHTTP(rr, req)
+
+	// Assert the response code is 400 Bad Request (invalid type)
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("Expected status 400, got %d", rr.Code)
+	}
+}
+
+func TestHandleMailQueueMissingRequiredFields(t *testing.T) {
+	// Create a request with missing required fields (e.g., missing "from", "to", or "subject")
+	requestPayload := []byte(`
+	{
+		"data": [
+			{
+				"id": "user1:queue1:message1",
+				"type": "email",
+				"attributes": {
+					"from": "",
+					"to": "recipient@example.com",
+					"subject": "Test Subject"
+				}
+			}
+		]
+	}`)
+	req, err := http.NewRequest(http.MethodPost, "/email-queues", bytes.NewBuffer(requestPayload))
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/vnd.api+json")
+
+	// Create a recorder to capture the HTTP response
+	rr := httptest.NewRecorder()
+
+	// Call the handler
+	handler := http.HandlerFunc(handleMailQueue)
+	handler.ServeHTTP(rr, req)
+
+	// Assert the response code is 400 Bad Request (missing "from" field)
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("Expected status 400, got %d", rr.Code)
+	}
+}
