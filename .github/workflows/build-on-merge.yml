@@ -33,6 +33,9 @@ jobs:
             ${{ runner.os }}-go-
 
       # Step 4: Run tests
+      - name: Copy .env.test to the correct location
+        run: cp .env.test /home/runner/work/mailculator/mailculator/.env
+
       - name: Run tests
         run: |
           go mod tidy
