@@ -1,5 +1,5 @@
 
-# MultiDialogo - MailCulator
+# MultiDialogo - MailCulator server
 
 ## Provisioning
 
@@ -30,7 +30,7 @@ To build the image:
 To introspect the builder image:
 
 ```bash
-docker run -ti --rm mailculator-builder bash
+docker run -ti --rm mailculators-builder bash
 ```
 
 ### Stage 2: Development
@@ -50,7 +50,7 @@ docker build -t mailculators-dev --target mailculators-dev .
 
 To run the development container:
 ```bash
-docker run -v$(pwd)/data:/var/lib/mailculator -p 8080:8080 mailculators-dev
+docker run -v$(pwd)/data:/var/lib/mailculator-server -p 8080:8080 mailculators-dev
 ```
 
 ### Stage 3: Production
@@ -66,9 +66,4 @@ The container is configured to run the mailculator binary.
 To build the image:
 ```bash
 docker build -t mailculators-prod --target mailculators-prod .
-```
-
-To run the production container:
-```bash
-docker run -p 8080:8080 mailculators-prod
 ```

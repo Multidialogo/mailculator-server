@@ -24,8 +24,9 @@ var inputPath string
 func init() {
 	registry := config.GetRegistry()
 	basePath := registry.Get("APP_DATA_PATH")
-	draftOutputPath := filepath.Join(basePath, registry.Get("DRAFT_OUTPUT_PATH"))
 	inputPath = filepath.Join(basePath, registry.Get("INPUT_PATH"))
+	draftOutputPath := filepath.Join(basePath, registry.Get("DRAFT_OUTPUT_PATH"))
+	outboxPath := filepath.Join(basePath, registry.Get("OUTBOX_PATH"))
 
 	err := os.MkdirAll(draftOutputPath, os.ModePerm)
 	if err != nil {
@@ -40,7 +41,7 @@ func init() {
 	}
 
 	// Initialize the EmailQueueStorage service
-	emailQueueStorage = service.NewEmailQueueStorage(draftOutputPath)
+	emailQueueStorage = service.NewEmailQueueStorage(draftOutputPath, outboxPath)
 }
 
 // main function to start the server and handle routes
