@@ -83,18 +83,8 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 	var queueUUID string
 
 	for _, emailData := range APIRequest.Data {
-		// Check if the type is "email"
-		if emailData.Type != "email" {
-			http.Error(w, fmt.Sprintf("Invalid type '%s', expected 'email'", emailData.Type), http.StatusBadRequest)
-			return
-		}
-
 		// Extract userID and messageUUID from the ID field
 		ids := strings.Split(emailData.ID, ":")
-		if len(ids) != 3 {
-			http.Error(w, "Invalid ID format, expected 'userID:queueUUID:messageUUID'", http.StatusBadRequest)
-			return
-		}
 
 		// Check if userID and messageUUID are already set and match the current ones
 		if userID != "" && userID != ids[0] {
