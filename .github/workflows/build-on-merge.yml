@@ -34,7 +34,7 @@ jobs:
 
       # Step 4: Run tests
       - name: Copy .env.test to the correct location
-        run: cp .env.test /home/runner/work/mailculator/mailculator/.env
+        run: cp .env.test /home/runner/work/mailculator-server/mailculator-server/.env
 
       - name: Run tests
         run: |
@@ -45,11 +45,11 @@ jobs:
       - name: Build the application
         run: |
           mkdir -p build
-          go build -o build/mailculator .
+          go build -o build/mailculator-server .
 
       # Step 6: Archive the build (optional)
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mailculator
-          path: build/mailculator
+          name: mailculator-server
+          path: build/mailculator-server
