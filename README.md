@@ -72,32 +72,3 @@ To run the production container:
 ```bash
 docker run -p 8080:8080 mailculator-prod
 ```
-
-### General Instructions
-
-To build and use the images, you can use the following Docker commands:
-
-To build the builder image:
-```bash
-docker build -t mailculator-builder --target builder .
-```
-
-To build the development image:
-```bash
-docker build -t mailculator-dev --target dev .
-```
-
-To build the production image:
-```bash
-docker build -t mailculator-prod --target prod .
-```
-To run the container in development mode (with live-reload using air):
-
-```bash
-docker run -p 8080:8080 mailculator-dev
-```
-
-To run the container in production mode:
-```bash
-docker run -p 8080:8080 mailculator-prod
-```
