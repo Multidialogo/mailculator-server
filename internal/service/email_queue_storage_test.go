@@ -27,11 +27,10 @@ func TestEmailQueueStorage_SaveEmailsAsEML(t *testing.T) {
 	basePath := t.TempDir() // t.TempDir() automatically creates a temp directory
 	require.NotEmpty(t, basePath, "Temp dir should not be empty")
 
-	draftPath := filepath.Join(basePath, "draft")
+	draftPath := filepath.Join(basePath, "outbox")
 
 	// Initialize EmailQueueStorage with the base path for storing EML files
 	emailQueueStorage := NewEmailQueueStorage(
-		draftPath,
 		filepath.Join(basePath, "outbox"),
 	)
 

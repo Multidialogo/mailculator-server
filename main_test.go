@@ -23,14 +23,13 @@ type RequestData struct {
 	} `json:"data"`
 }
 
-var rootDir string
 var payloadsDir string
 var expectationsDir string
 
 func init() {
 	// Get the directory where the test source is located (i.e., the directory of this test file)
 	_, currentFilePath, _, _ := runtime.Caller(0)
-	rootDir = filepath.Dir(currentFilePath)
+	rootDir := filepath.Dir(currentFilePath)
 	testDir := filepath.Join(rootDir, "testData")
 	payloadsDir = filepath.Join(testDir, "payloads")
 	expectationsDir = filepath.Join(testDir, "expectations")
@@ -80,7 +79,7 @@ func TestHandleMailQueue(t *testing.T) {
 	assert.JSONEq(t, string(responsePayload), rr.Body.String())
 
 	// Assert that a .eml file exists at in drafts dir
-	draftOutputPath := filepath.Join(registry.Get("APP_DATA_PATH"), registry.Get("DRAFT_OUTPUT_PATH"))
+	draftOutputPath := filepath.Join(registry.Get("APP_DATA_PATH"), registry.Get("OUTBOX_PATH"))
 
 	var requestData RequestData
 	err = json.Unmarshal(requestPayload, &requestData)
