@@ -41,7 +41,7 @@ func init() {
 	}
 
 	// Initialize the EmailQueueStorage service
-	emailQueueStorage = service.NewEmailQueueStorage(draftOutputPath, outboxPath)
+	emailQueueStorage = service.NewEmailQueueStorage(outboxPath)
 }
 
 // main function to start the server and handle routes

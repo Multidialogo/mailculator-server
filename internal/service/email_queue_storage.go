@@ -16,28 +16,27 @@ import (
 )
 
 type EmailQueueStorage struct {
-	DraftOutputPath string
-	OutboxPath      string
+	OutboxPath string
 }
 
-func NewEmailQueueStorage(draftOutputPath string, outboxPath string) *EmailQueueStorage {
-	return &EmailQueueStorage{DraftOutputPath: draftOutputPath, OutboxPath: outboxPath}
+func NewEmailQueueStorage(outboxPath string) *EmailQueueStorage {
+	return &EmailQueueStorage{OutboxPath: outboxPath}
 }
 
 func (s *EmailQueueStorage) SaveEmailsAsEML(emails []*model.Email) error {
 	var filePaths []string
 	for _, email := range emails {
 		// Generate file path for the .EML file
-		draftPath := filepath.Join(s.DraftOutputPath, fmt.Sprintf("%s.EML", email.Path()))
+		outboxFilePath := filepath.Join(s.OutboxPath, fmt.Sprintf("%s.EML", email.Path()))
 		filePaths = append(filePaths, fmt.Sprintf("%s.EML", email.Path()))
 		// Ensure the directory structure exists
-		dirPath := filepath.Dir(draftPath)
+		dirPath := filepath.Dir(outboxFilePath)
 		if err := os.MkdirAll(dirPath, 0755); err != nil {
 			return fmt.Errorf("failed to create directories for EML file: %w", err)
 		}
 
 		// Open the file for writing
-		file, err := os.Create(draftPath)
+		file, err := os.Create(outboxFilePath)
 		if err != nil {
 			return fmt.Errorf("failed to create EML file: %w", err)
 		}
@@ -120,17 +119,6 @@ func (s *EmailQueueStorage) SaveEmailsAsEML(emails []*model.Email) error {
 		if err != nil {
 			return fmt.Errorf("failed to close multipart writer: %w", err)
 		}
-	}
-
-	// Copy created files in outbox directory
-	for _, fileToCopyPath := range filePaths {
-		var originalFilePath string = filepath.Join(s.DraftOutputPath, fileToCopyPath)
-		var destinationFilePath string = filepath.Join(s.OutboxPath, fileToCopyPath)
-		err := utils.CopyFile(originalFilePath, destinationFilePath)
-		if err != nil {
-			return fmt.Errorf("failed to move file from %s to %s: %w", originalFilePath, destinationFilePath, err)
-		}
-		return nil
 	}
 
 	return nil
