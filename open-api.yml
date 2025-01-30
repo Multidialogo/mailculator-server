@@ -83,7 +83,7 @@ paths:
                           self:
                             type: string
                             description: "URL for accessing the created email queue"
-                            example: "/email-queues/{userID}:{queueUUID}:{messageUUID}"
+                            example: "/email-queues/{userID}:{queueUUID}"
         '400':
           description: "Invalid request body or parameters"
         '405':
