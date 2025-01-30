@@ -1,9 +1,9 @@
 {
   "data": {
     "type": "mail-queue",
-    "id": "user123:queue456:message789",
+    "id": "user123:queue456",
     "links": {
-      "self": "/email-queues/user123:queue456:message789"
+      "self": "/email-queues/user123:queue456"
     }
   }
 }

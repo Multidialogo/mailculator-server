@@ -162,11 +162,11 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 			} `json:"links"`
 		}{
 			Type: "mail-queue",
-			ID:   fmt.Sprintf("%s:%s:%s", userID, queueUUID, messageUUID),
+			ID:   fmt.Sprintf("%s:%s", userID, queueUUID),
 			Links: struct {
 				Self string `json:"self"`
 			}{
-				Self: fmt.Sprintf("/email-queues/%s:%s:%s", userID, queueUUID, messageUUID),
+				Self: fmt.Sprintf("/email-queues/%s:%s", userID, queueUUID),
 			},
 		},
 	}
