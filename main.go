@@ -104,9 +104,8 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 		if queueUUID == "" {
 			queueUUID = ids[1]
 		}
-		if messageUUID == "" {
-			messageUUID = ids[2]
-		}
+
+		messageUUID = ids[2]
 
 		attachmentPaths := make([]string, len(emailData.Attributes.Attachments))
 		for i, attachmentPath := range emailData.Attributes.Attachments {
