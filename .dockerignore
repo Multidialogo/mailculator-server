@@ -1,7 +1,7 @@
 Dockerfile
 docker-compose.yml
 README.md
-open-api.yml
+openapi.yaml
 .dockerignore
 .gitignore
 data
