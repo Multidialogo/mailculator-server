@@ -3,5 +3,3 @@ data/input
 data/maildir
 !data/input/.gitkeep
 !data/maildir/outbox/.gitkeep
-client
-!client/.gitkeep
