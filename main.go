@@ -1,24 +1,30 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"log"
+	"mailculator/internal/API"
+	"mailculator/internal/config"
+	"mailculator/internal/model"
+	"mailculator/internal/outbox"
+	"mailculator/internal/service"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
-
-	"mailculator/internal/API"
-	"mailculator/internal/config"
-	"mailculator/internal/model"
-	"mailculator/internal/service"
 )
 
 var emailQueueStorage *service.EmailQueueStorage
 
 var inputPath string
+
+var outboxService *outbox.Outbox
 
 // init function to initialize necessary services
 func init() {
@@ -42,6 +48,19 @@ func init() {
 
 	// Initialize the EmailQueueStorage service
 	emailQueueStorage = service.NewEmailQueueStorage(outboxPath)
+
+	// Initialize dynamo db outbox
+	awsConfig := aws.Config{
+		Region: os.Getenv("AWS_REGION"),
+		Credentials: credentials.NewStaticCredentialsProvider(
+			os.Getenv("AWS_ACCESS_KEY_ID"),
+			os.Getenv("AWS_SECRET_ACCESS_KEY"),
+			"",
+		),
+		BaseEndpoint: aws.String(os.Getenv("AWS_BASE_ENDPOINT")),
+	}
+	db := dynamodb.NewFromConfig(awsConfig)
+	outboxService = outbox.NewOutbox(db)
 }
 
 // main function to start the server and handle routes
@@ -126,6 +145,8 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 			attachmentPaths,
 			emailData.Attributes.CustomHeaders,
 			time.Now(),
+			emailData.Attributes.CallbackCallOnSuccess,
+			emailData.Attributes.CallbackCallOnFailure,
 		)
 
 		// Append the created email to the slice
@@ -137,6 +158,21 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error saving emails: %v", err), http.StatusInternalServerError)
 		return
+	}
+
+	ctx := context.TODO()
+	for _, email := range emails {
+		err := outboxService.Insert(ctx, outbox.Email{
+			Id:              email.MessageUUID(),
+			Status:          outbox.StatusProcessing,
+			EmlFilePath:     email.Path(),
+			SuccessCallback: email.CallbackCallOnSuccess(),
+			FailureCallback: email.CallbackCallOnFailure(),
+		})
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error saving emails on db: %v", err), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	// Respond with the 201 Created status and the location of the saved emails

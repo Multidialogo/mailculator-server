@@ -88,7 +88,7 @@ func TestNewEmail(t *testing.T) {
 			email := NewEmail(
 				tt.userID, tt.queueUUID, tt.messageUUID, tt.from, tt.replyTo, tt.to,
 				tt.subject, tt.bodyHTML, tt.bodyText, tt.attachments, tt.customHeaders,
-				testutils.GetUnixEpoch(),
+				testutils.GetUnixEpoch(), "", "",
 			)
 
 			// Check if email matches expected values
@@ -123,7 +123,7 @@ func TestEmailGetters(t *testing.T) {
 		"user123", "queue456", "message789", "sender@example.com", "replyto@example.com",
 		"recipient@example.com", "Subject", "<h1>HTML</h1>", "Plain Text",
 		[]string{"file1.txt"}, map[string]string{"X-Custom-Header": "HeaderValue"},
-		testutils.GetUnixEpoch(),
+		testutils.GetUnixEpoch(), "", "",
 	)
 
 	tests := []struct {
