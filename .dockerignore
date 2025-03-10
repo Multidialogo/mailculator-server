@@ -1,7 +1,0 @@
-Dockerfile
-docker-compose.yml
-README.md
-openapi.yaml
-.dockerignore
-.gitignore
-data
