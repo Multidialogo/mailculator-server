@@ -17,49 +17,57 @@ paths:
               type: object
               properties:
                 data:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                      description: "ID in the format 'userID:queueUUID:messageUUID'"
-                    type:
-                      type: string
-                      enum: [email]
-                      description: "The type of the resource"
-                    attributes:
-                      type: object
-                      properties:
-                        from:
-                          type: string
-                          format: email
-                          description: "Sender of the email"
-                        replyTo:
-                          type: string
-                          format: email
-                          description: "Reply-to address"
-                        to:
-                          type: string
-                          format: email
-                          description: "Recipient of the email"
-                        subject:
-                          type: string
-                          description: "Subject of the email"
-                        bodyHTML:
-                          type: string
-                          description: "HTML body content of the email"
-                        bodyText:
-                          type: string
-                          description: "Plain text body content of the email"
-                        attachments:
-                          type: array
-                          items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        description: "ID in the format 'userID:queueUUID:messageUUID'"
+                      type:
+                        type: string
+                        enum: [email]
+                        description: "The type of the resource"
+                      attributes:
+                        type: object
+                        properties:
+                          from:
                             type: string
-                            description: "Paths to attached files"
-                        customHeaders:
-                          type: object
-                          additionalProperties:
+                            format: email
+                            description: "Sender of the email"
+                          replyTo:
                             type: string
-                            description: "Custom headers for the email"
+                            format: email
+                            description: "Reply-to address"
+                          to:
+                            type: string
+                            format: email
+                            description: "Recipient of the email"
+                          subject:
+                            type: string
+                            description: "Subject of the email"
+                          bodyHTML:
+                            type: string
+                            description: "HTML body content of the email"
+                          bodyText:
+                            type: string
+                            description: "Plain text body content of the email"
+                          attachments:
+                            type: array
+                            items:
+                              type: string
+                              description: "Paths to attached files"
+                          customHeaders:
+                            type: object
+                            additionalProperties:
+                              type: string
+                              description: "Custom headers for the email"
+                          callbackCallOnSuccess:
+                            type: string
+                            description: "Callback command (curl) to call when email is delivered to ses"
+                          callbackCallOnFailure:
+                            type: string
+                            description: "Callback command (curl) to call when, for some reason, email could not be delivered to ses"
       responses:
         '201':
           description: "Email queue created successfully"
@@ -118,3 +126,7 @@ components:
           type: object
           additionalProperties:
             type: string
+        callbackCallOnSuccess:
+          type: string
+        callbackCallOnFailure:
+          type: string
