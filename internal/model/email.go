@@ -7,23 +7,25 @@ import (
 
 // Email represents an immutable email with recipient, subject, body, attachments, and custom headers.
 type Email struct {
-	userID        string
-	queueUUID     string
-	messageUUID   string
-	from          string
-	replyTo       string
-	to            string
-	subject       string
-	bodyHTML      string
-	bodyText      string
-	attachments   []string
-	customHeaders map[string]string
-	date          time.Time
-	path          string
+	userID                string
+	queueUUID             string
+	messageUUID           string
+	from                  string
+	replyTo               string
+	to                    string
+	subject               string
+	bodyHTML              string
+	bodyText              string
+	attachments           []string
+	customHeaders         map[string]string
+	date                  time.Time
+	path                  string
+	callbackCallOnSuccess string
+	callbackCallOnFailure string
 }
 
 // NewEmail creates a new immutable Email instance.
-func NewEmail(userID, queueUUID, messageUUID, from, replyTo, to, subject, bodyHTML, bodyText string, attachments []string, customHeaders map[string]string, date time.Time) *Email {
+func NewEmail(userID, queueUUID, messageUUID, from, replyTo, to, subject, bodyHTML, bodyText string, attachments []string, customHeaders map[string]string, date time.Time, callbackCallOnSuccess string, callbackCallOnFailure string) *Email {
 	if userID == "" || queueUUID == "" || messageUUID == "" || from == "" || replyTo == "" || to == "" {
 		panic("userID, queueUUID, messageUUID, from, replyTo, and to cannot be empty")
 	}
@@ -39,19 +41,21 @@ func NewEmail(userID, queueUUID, messageUUID, from, replyTo, to, subject, bodyHT
 	}
 
 	return &Email{
-		userID:        userID,
-		queueUUID:     queueUUID,
-		messageUUID:   messageUUID,
-		from:          from,
-		replyTo:       replyTo,
-		to:            to,
-		subject:       subject,
-		bodyHTML:      bodyHTML,
-		bodyText:      bodyText,
-		attachments:   clonedAttachments,
-		customHeaders: clonedHeaders,
-		date:          date,
-		path:          path,
+		userID:                userID,
+		queueUUID:             queueUUID,
+		messageUUID:           messageUUID,
+		from:                  from,
+		replyTo:               replyTo,
+		to:                    to,
+		subject:               subject,
+		bodyHTML:              bodyHTML,
+		bodyText:              bodyText,
+		attachments:           clonedAttachments,
+		customHeaders:         clonedHeaders,
+		date:                  date,
+		path:                  path,
+		callbackCallOnSuccess: callbackCallOnSuccess,
+		callbackCallOnFailure: callbackCallOnFailure,
 	}
 }
 
@@ -103,3 +107,7 @@ func (e *Email) Date() time.Time { return e.date }
 
 // Path returns the calculated file path.
 func (e *Email) Path() string { return e.path }
+
+func (e *Email) CallbackCallOnSuccess() string { return e.callbackCallOnSuccess }
+
+func (e *Email) CallbackCallOnFailure() string { return e.callbackCallOnFailure }
