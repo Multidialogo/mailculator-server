@@ -1,14 +1,14 @@
 package service
 
 import (
-	"os"
-	"testing"
-	"mailculator/internal/model"
-	"mailculator/internal/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"mailculator/internal/model"
+	"mailculator/internal/testutils"
+	"os"
 	"path/filepath"
 	"runtime"
+	"testing"
 )
 
 var fixturesDir string
@@ -61,6 +61,8 @@ func TestEmailQueueStorage_SaveEmailsAsEML(t *testing.T) {
 					"X-Custom-Header": "CustomHeaderValue",
 				},
 				testutils.GetUnixEpoch(),
+				"",
+				"",
 			),
 			expectedEMLPath:     "users/user1/queues/queue1/messages/message1.EML",
 			expectedEMLFileName: "user1:queue1:message1.EML",
@@ -82,6 +84,8 @@ func TestEmailQueueStorage_SaveEmailsAsEML(t *testing.T) {
 					"X-Custom-Header": "AnotherHeaderValue",
 				},
 				testutils.GetUnixEpoch(),
+				"",
+				"",
 			),
 			expectedEMLPath:     "users/user1/queues/queue1/messages/message2.EML",
 			expectedEMLFileName: "user1:queue1:message2.EML",
