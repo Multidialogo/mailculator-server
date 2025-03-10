@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"github.com/olesho/curl-parser"
 )
 
 // Email validation regular expression
@@ -57,6 +58,18 @@ func ValidateRequest(APIRequest *QueueCreationAPI) error {
 		if datum.Attributes.BodyHTML == "" && datum.Attributes.BodyText == "" {
 			return fmt.Errorf("either 'bodyHTML' or 'bodyText' must be provided")
 		}
+
+		if datum.Attributes.CallbackCallOnSuccess != "" {
+			if !isValidCurlCommand(datum.Attributes.CallbackCallOnSuccess) {
+				return fmt.Errorf("invalid 'callbackCallOnSuccess' curl command")
+			}
+		}
+
+		if datum.Attributes.CallbackCallOnFailure  != "" {
+			if !isValidCurlCommand(datum.Attributes.CallbackCallOnFailure) {
+				return fmt.Errorf("invalid 'callbackCallOnFailure' curl command")
+			}
+		}
 	}
 
 	return nil
@@ -65,4 +78,15 @@ func ValidateRequest(APIRequest *QueueCreationAPI) error {
 // isValidEmail validates the email address using the regex
 func isValidEmail(email string) bool {
 	return emailRegex.MatchString(email)
+}
+
+func isValidCurlCommand(curlCommand string) bool {
+	if strings.Index(curlCommand, "curl ") != 0 {
+		return false
+	}
+    _, err := parser.Parse(curlCommand);
+    if err != nil {
+        return false;
+    }
+	return true
 }
