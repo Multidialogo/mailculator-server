@@ -88,6 +88,33 @@ func (o *Outbox) Insert(ctx context.Context, email Email) error {
 	return err
 }
 
+func (o *Outbox) BulkInsert(ctx context.Context, emails []Email) error {
+	ti := &dynamodb.ExecuteTransactionInput{
+		TransactStatements: []types.ParameterizedStatement{},
+	}
+
+	for _, email := range emails {
+		metaStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?, 'Attributes': ?}", tableName)
+		metaAttrs := new(emailMarshaller).GetMetaAttributes(email)
+		metaParams, err := attributevalue.MarshalList([]interface{}{email.Id, statusMeta, metaAttrs})
+		if err != nil {
+			return err
+		}
+
+		inStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?}", tableName)
+		inParams, err := attributevalue.MarshalList([]interface{}{email.Id, email.Status, map[string]interface{}{}})
+		if err != nil {
+			return err
+		}
+
+		ti.TransactStatements = append(ti.TransactStatements, types.ParameterizedStatement{Statement: aws.String(metaStmt), Parameters: metaParams})
+		ti.TransactStatements = append(ti.TransactStatements, types.ParameterizedStatement{Statement: aws.String(inStmt), Parameters: inParams})
+	}
+
+	_, err := o.db.ExecuteTransaction(ctx, ti)
+	return err
+}
+
 func (o *Outbox) Update(ctx context.Context, id string, status string) error {
 	metaStmt := fmt.Sprintf("UPDATE \"%v\" SET Attributes.Latest=? WHERE Id=? AND Status=?", tableName)
 	metaParams, err := attributevalue.MarshalList([]interface{}{status, id, statusMeta})
