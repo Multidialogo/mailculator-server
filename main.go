@@ -51,13 +51,13 @@ func init() {
 
 	// Initialize dynamo db outbox
 	awsConfig := aws.Config{
-		Region: os.Getenv("AWS_REGION"),
+		Region: registry.Get("AWS_REGION"),
 		Credentials: credentials.NewStaticCredentialsProvider(
-			os.Getenv("AWS_ACCESS_KEY_ID"),
-			os.Getenv("AWS_SECRET_ACCESS_KEY"),
+			registry.Get("AWS_ACCESS_KEY_ID"),
+			registry.Get("AWS_SECRET_ACCESS_KEY"),
 			"",
 		),
-		BaseEndpoint: aws.String(os.Getenv("AWS_BASE_ENDPOINT")),
+		BaseEndpoint: aws.String(registry.Get("AWS_BASE_ENDPOINT")),
 	}
 	db := dynamodb.NewFromConfig(awsConfig)
 	outboxService = outbox.NewOutbox(db)
@@ -98,6 +98,7 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 
 	// Process each email data in the request
 	var emails []*model.Email
+	var emailsOutbox []outbox.Email
 	var userID string
 	var messageUUID string
 	var queueUUID string
@@ -151,6 +152,17 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 
 		// Append the created email to the slice
 		emails = append(emails, email)
+
+		emailsOutbox = append(
+			emailsOutbox,
+			outbox.Email{
+				Id:              email.MessageUUID(),
+				Status:          outbox.StatusProcessing,
+				EmlFilePath:     email.Path(),
+				SuccessCallback: email.CallbackCallOnSuccess(),
+				FailureCallback: email.CallbackCallOnFailure(),
+			},
+		)
 	}
 
 	// Save the emails using the EmailQueueStorage service
@@ -160,19 +172,12 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// storing data in the outbox table
 	ctx := context.TODO()
-	for _, email := range emails {
-		err := outboxService.Insert(ctx, outbox.Email{
-			Id:              email.MessageUUID(),
-			Status:          outbox.StatusProcessing,
-			EmlFilePath:     email.Path(),
-			SuccessCallback: email.CallbackCallOnSuccess(),
-			FailureCallback: email.CallbackCallOnFailure(),
-		})
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Error saving emails on db: %v", err), http.StatusInternalServerError)
-			return
-		}
+	err = outboxService.BulkInsert(ctx, emailsOutbox)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error saving emails on db: %v", err), http.StatusInternalServerError)
+		return
 	}
 
 	// Respond with the 201 Created status and the location of the saved emails
