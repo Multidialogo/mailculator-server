@@ -5,19 +5,19 @@ services:
   app:
     profiles:
       - "develop"
-    build:
-      context: "./app"
+    image: golang:1.23-alpine
     container_name: mailculator_server_develop_app
     ports:
       - "127.0.0.1:8080:8080"
-    working_dir: /usr/local/go/src/mailculator-server
+    working_dir: /app
     env_file:
       - app/develop.env
     volumes:
-      - ../..:/usr/local/go/src/mailculator-server
-      - ./app/log:/var/log/app
+      - ../..:/app
       - ../../data:/var/lib/mailculator-server
-    command: air
+      - ./app/develop.env:/app/.env
+      - ./app/log:/var/log/app
+    command: /bin/sh -c "go mod tidy && go mod download && go install github.com/air-verse/air@latest && air"
     networks:
       - mailculator-server-local-net
 

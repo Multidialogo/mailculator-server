@@ -1,4 +1,6 @@
-.env.prod
+.env
+tmp/*
+.idea
 data/input
 data/maildir
 !*/.gitkeep
