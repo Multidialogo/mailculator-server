@@ -44,7 +44,7 @@ func (suite *OutboxTestSuite) TearDownTest() {
 	stmt := &dynamodb.ExecuteStatementInput{Statement: aws.String(query)}
 	res, _ := suite.db.ExecuteStatement(context.TODO(), stmt)
 
-	var items []emailItemRow
+	var items []EmailItemRow
 	_ = attributevalue.UnmarshalListOfMaps(res.Items, &items)
 
 	query = fmt.Sprintf("DELETE FROM \"%v\" WHERE Id=? AND Status=?", "Outbox")
