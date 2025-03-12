@@ -139,13 +139,13 @@ func (o *Outbox) Update(ctx context.Context, id string, status string) error {
 	return err
 }
 
-type emailItemRow struct {
+type EmailItemRow struct {
 	Id         string                 `dynamodbav:"Id"`
 	Status     string                 `dynamodbav:"Status"`
 	Attributes map[string]interface{} `dynamodbav:"Attributes"`
 }
 
-func (email emailItemRow) GetKey() map[string]types.AttributeValue {
+func (email EmailItemRow) GetKey() map[string]types.AttributeValue {
 	id, err := attributevalue.Marshal(email.Id)
 	if err != nil {
 		panic(err)
@@ -171,7 +171,7 @@ func (m *emailMarshaller) GetMetaAttributes(email Email) map[string]interface{} 
 }
 
 func (m *emailMarshaller) UnmarshalList(attrsList []map[string]types.AttributeValue) (emails []Email, err error) {
-	var items []emailItemRow
+	var items []EmailItemRow
 	err = attributevalue.UnmarshalListOfMaps(attrsList, &items)
 	if err != nil {
 		return []Email{}, err

@@ -1,19 +1,25 @@
 package main
 
 import (
-	"os"
 	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
-	"path/filepath"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"mailculator/internal/outbox"
 	"net/http"
 	"net/http/httptest"
-	"testing"
+	"os"
+	"path/filepath"
 	"runtime"
-	"encoding/json"
+	"testing"
 
-	"mailculator/internal/testutils"
-	"mailculator/internal/config"
 	"github.com/stretchr/testify/assert"
+	"mailculator/internal/config"
+	"mailculator/internal/testutils"
 )
 
 // Define the simplified structure of the JSON
@@ -25,6 +31,7 @@ type RequestData struct {
 
 var payloadsDir string
 var expectationsDir string
+var db *dynamodb.Client
 
 func init() {
 	// Get the directory where the test source is located (i.e., the directory of this test file)
@@ -33,6 +40,18 @@ func init() {
 	testDir := filepath.Join(rootDir, "testData")
 	payloadsDir = filepath.Join(testDir, "payloads")
 	expectationsDir = filepath.Join(testDir, "expectations")
+
+	awsConfig := aws.Config{
+		Region: os.Getenv("AWS_REGION"),
+		Credentials: credentials.NewStaticCredentialsProvider(
+			os.Getenv("AWS_ACCESS_KEY_ID"),
+			os.Getenv("AWS_SECRET_ACCESS_KEY"),
+			"",
+		),
+		BaseEndpoint: aws.String(os.Getenv("AWS_BASE_ENDPOINT")),
+	}
+	db = dynamodb.NewFromConfig(awsConfig)
+	outboxService = outbox.NewOutbox(db)
 }
 
 func TestHandleMailQueue(t *testing.T) {
@@ -52,7 +71,7 @@ func TestHandleMailQueue(t *testing.T) {
 	testutils.LoadFixturesFilesInInputDirectory(filepath.Join(testPayloadDir, "files"), filepath.Join(inputPath, functionName), t)
 
 	// Create a new HTTP request
-	req, err := http.NewRequest(http.MethodPost, "/email-queues", bytes.NewBuffer([]byte(requestPayload)))
+	req, err := http.NewRequest(http.MethodPost, "/email-queues", bytes.NewBuffer(requestPayload))
 	if err != nil {
 		t.Fatalf("Failed to create request: %v", err)
 	}
@@ -94,6 +113,30 @@ func TestHandleMailQueue(t *testing.T) {
 
 	emlFilePath := filepath.Join(draftOutputPath, fmt.Sprintf("%s.EML", messagePath))
 	assert.FileExists(t, emlFilePath, "Expected .eml file to exist at %s, but it does not.", emlFilePath)
+
+	res, err := outboxService.Query(context.TODO(), outbox.StatusProcessing, 25)
+	assert.NoError(t, err)
+	assert.Len(t, res, 2)
+
+	tearDown(t)
+}
+
+func tearDown(t *testing.T) {
+	query := fmt.Sprintf("SELECT Id, Status FROM \"%v\"", "Outbox")
+	stmt := &dynamodb.ExecuteStatementInput{Statement: aws.String(query)}
+	res, err := db.ExecuteStatement(context.TODO(), stmt)
+	assert.NoError(t, err)
+
+	var items []outbox.EmailItemRow
+	_ = attributevalue.UnmarshalListOfMaps(res.Items, &items)
+
+	query = fmt.Sprintf("DELETE FROM \"%v\" WHERE Id=? AND Status=?", "Outbox")
+	for _, item := range items {
+		params, _ := attributevalue.MarshalList([]interface{}{item.Id, item.Status})
+		stmt = &dynamodb.ExecuteStatementInput{Statement: aws.String(query), Parameters: params}
+		_, err = db.ExecuteStatement(context.TODO(), stmt)
+		assert.NoError(t, err)
+	}
 }
 
 func TestHandleMailQueueInvalidMethod(t *testing.T) {
