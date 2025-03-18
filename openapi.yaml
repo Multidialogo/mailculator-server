@@ -28,46 +28,43 @@ paths:
                         type: string
                         enum: [email]
                         description: "The type of the resource"
-                      attributes:
+                      from:
+                        type: string
+                        format: email
+                        description: "Sender of the email"
+                      reply_to:
+                        type: string
+                        format: email
+                        description: "Reply-to address"
+                      to:
+                        type: string
+                        format: email
+                        description: "Recipient of the email"
+                      subject:
+                        type: string
+                        description: "Subject of the email"
+                      body_html:
+                        type: string
+                        description: "HTML body content of the email"
+                      body_text:
+                        type: string
+                        description: "Plain text body content of the email"
+                      attachments:
+                        type: array
+                        description: "Paths to attached files"
+                        items:
+                          type: string
+                      custom_headers:
                         type: object
-                        properties:
-                          from:
-                            type: string
-                            format: email
-                            description: "Sender of the email"
-                          replyTo:
-                            type: string
-                            format: email
-                            description: "Reply-to address"
-                          to:
-                            type: string
-                            format: email
-                            description: "Recipient of the email"
-                          subject:
-                            type: string
-                            description: "Subject of the email"
-                          bodyHTML:
-                            type: string
-                            description: "HTML body content of the email"
-                          bodyText:
-                            type: string
-                            description: "Plain text body content of the email"
-                          attachments:
-                            type: array
-                            items:
-                              type: string
-                              description: "Paths to attached files"
-                          customHeaders:
-                            type: object
-                            additionalProperties:
-                              type: string
-                              description: "Custom headers for the email"
-                          callbackCallOnSuccess:
-                            type: string
-                            description: "Callback command (curl) to call when email is delivered to ses"
-                          callbackCallOnFailure:
-                            type: string
-                            description: "Callback command (curl) to call when, for some reason, email could not be delivered to ses"
+                        description: "Custom headers for the email"
+                        additionalProperties:
+                          type: string
+                      callback_on_success:
+                        type: string
+                        description: "Callback command (curl) to call when email is delivered to ses"
+                      callback_on_failure:
+                        type: string
+                        description: "Callback command (curl) to call when, for some reason, email could not be delivered to ses"
       responses:
         '201':
           description: "Email queue created successfully"
@@ -106,7 +103,7 @@ components:
         from:
           type: string
           format: email
-        replyTo:
+        reply_to:
           type: string
           format: email
         to:
@@ -114,19 +111,19 @@ components:
           format: email
         subject:
           type: string
-        bodyHTML:
+        body_html:
           type: string
-        bodyText:
+        body_text:
           type: string
         attachments:
           type: array
           items:
             type: string
-        customHeaders:
+        custom_headers:
           type: object
           additionalProperties:
             type: string
-        callbackCallOnSuccess:
+        callback_on_success:
           type: string
-        callbackCallOnFailure:
+        callback_on_failure:
           type: string
