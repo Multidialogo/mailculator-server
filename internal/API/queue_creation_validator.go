@@ -2,15 +2,15 @@ package API
 
 import (
 	"fmt"
+	"github.com/olesho/curl-parser"
 	"regexp"
 	"strings"
-	"github.com/olesho/curl-parser"
 )
 
 // Email validation regular expression
 var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 
-// validateRequest validates the incoming request for required fields and checks for valid email addresses
+// ValidateRequest validateRequest validates the incoming request for required fields and checks for valid email addresses
 func ValidateRequest(APIRequest *QueueCreationAPI) error {
 	if len(APIRequest.Data) == 0 {
 		return fmt.Errorf("no email data provided")
@@ -29,45 +29,45 @@ func ValidateRequest(APIRequest *QueueCreationAPI) error {
 		}
 
 		// Validate required fields
-		if datum.Attributes.From == "" {
+		if datum.From == "" {
 			return fmt.Errorf("missing 'from' field")
 		}
-		if !isValidEmail(datum.Attributes.From) {
+		if !isValidEmail(datum.From) {
 			return fmt.Errorf("invalid 'from' email address")
 		}
 
-		if datum.Attributes.To == "" {
+		if datum.To == "" {
 			return fmt.Errorf("missing 'to' field")
 		}
-		if !isValidEmail(datum.Attributes.To) {
+		if !isValidEmail(datum.To) {
 			return fmt.Errorf("invalid 'to' email address")
 		}
 
-		if datum.Attributes.ReplyTo == "" {
-			return fmt.Errorf("missing 'replyTo' field")
+		if datum.ReplyTo == "" {
+			return fmt.Errorf("missing 'reply_to' field")
 		}
-		if !isValidEmail(datum.Attributes.ReplyTo) {
-			return fmt.Errorf("invalid 'replyTo' email address")
+		if !isValidEmail(datum.ReplyTo) {
+			return fmt.Errorf("invalid 'reply_to' email address")
 		}
 
-		if datum.Attributes.Subject == "" {
+		if datum.Subject == "" {
 			return fmt.Errorf("missing 'subject' field")
 		}
 
 		// If body HTML is empty, body text must also be empty
-		if datum.Attributes.BodyHTML == "" && datum.Attributes.BodyText == "" {
-			return fmt.Errorf("either 'bodyHTML' or 'bodyText' must be provided")
+		if datum.BodyHTML == "" && datum.BodyText == "" {
+			return fmt.Errorf("either 'body_html' or 'body_text' must be provided")
 		}
 
-		if datum.Attributes.CallbackCallOnSuccess != "" {
-			if !isValidCurlCommand(datum.Attributes.CallbackCallOnSuccess) {
-				return fmt.Errorf("invalid 'callbackCallOnSuccess' curl command")
+		if datum.CallbackCallOnSuccess != "" {
+			if !isValidCurlCommand(datum.CallbackCallOnSuccess) {
+				return fmt.Errorf("invalid 'callback_on_success' curl command")
 			}
 		}
 
-		if datum.Attributes.CallbackCallOnFailure  != "" {
-			if !isValidCurlCommand(datum.Attributes.CallbackCallOnFailure) {
-				return fmt.Errorf("invalid 'callbackCallOnFailure' curl command")
+		if datum.CallbackCallOnFailure != "" {
+			if !isValidCurlCommand(datum.CallbackCallOnFailure) {
+				return fmt.Errorf("invalid 'callback_on_failure' curl command")
 			}
 		}
 	}
@@ -84,9 +84,9 @@ func isValidCurlCommand(curlCommand string) bool {
 	if strings.Index(curlCommand, "curl ") != 0 {
 		return false
 	}
-    _, err := parser.Parse(curlCommand);
-    if err != nil {
-        return false;
-    }
+	_, err := parser.Parse(curlCommand)
+	if err != nil {
+		return false
+	}
 	return true
 }
