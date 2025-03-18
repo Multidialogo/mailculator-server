@@ -14,45 +14,30 @@ func TestValidateRequest(t *testing.T) {
 			name: "Valid request",
 			apiRequest: &QueueCreationAPI{
 				Data: []struct {
-					ID         string `json:"id"`
-					Type       string `json:"type"`
-					Attributes struct {
-						From          			string            `json:"from"`
-						ReplyTo       			string            `json:"replyTo"`
-						To            			string            `json:"to"`
-						Subject       			string            `json:"subject"`
-						BodyHTML      			string            `json:"bodyHTML"`
-						BodyText      			string            `json:"bodyText"`
-						Attachments   			[]string          `json:"attachments"`
-						CustomHeaders 			map[string]string `json:"customHeaders"`
-						CallbackCallOnSuccess   string            `json:"callbackCallOnSuccess"`
-						CallbackCallOnFailure   string            `json:"callbackCallOnFailure"`
-					} `json:"attributes"`
+					ID                    string            `json:"id"`
+					Type                  string            `json:"type"`
+					From                  string            `json:"from"`
+					ReplyTo               string            `json:"reply_to"`
+					To                    string            `json:"to"`
+					Subject               string            `json:"subject"`
+					BodyHTML              string            `json:"body_html"`
+					BodyText              string            `json:"body_text"`
+					Attachments           []string          `json:"attachments"`
+					CustomHeaders         map[string]string `json:"custom_headers"`
+					CallbackCallOnSuccess string            `json:"callback_on_success"`
+					CallbackCallOnFailure string            `json:"callback_on_failure"`
 				}{
 					{
-						ID:   "userID:queueUUID:messageUUID",
-						Type: "email",
-						Attributes: struct {
-							From          			string            `json:"from"`
-							ReplyTo       			string            `json:"replyTo"`
-							To            			string            `json:"to"`
-							Subject       			string            `json:"subject"`
-							BodyHTML      			string            `json:"bodyHTML"`
-							BodyText      			string            `json:"bodyText"`
-							Attachments   			[]string          `json:"attachments"`
-							CustomHeaders 			map[string]string `json:"customHeaders"`
-							CallbackCallOnSuccess   string            `json:"callbackCallOnSuccess"`
-							CallbackCallOnFailure   string            `json:"callbackCallOnFailure"`
-						}{
-							From:     "test@example.com",
-							ReplyTo:  "reply@example.com",
-							To:       "to@example.com",
-							Subject:  "Test Subject",
-							BodyHTML: "<p>Test HTML</p>",
-							BodyText: "Test Text",
-							CallbackCallOnSuccess: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"OK\"}' https://mycallback.it/",
-							CallbackCallOnFailure: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"KO\"}' https://mycallback.it/",
-						},
+						ID:                    "userID:queueUUID:messageUUID",
+						Type:                  "email",
+						From:                  "test@example.com",
+						ReplyTo:               "reply@example.com",
+						To:                    "to@example.com",
+						Subject:               "Test Subject",
+						BodyHTML:              "<p>Test HTML</p>",
+						BodyText:              "Test Text",
+						CallbackCallOnSuccess: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"OK\"}' https://mycallback.it/",
+						CallbackCallOnFailure: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"KO\"}' https://mycallback.it/",
 					},
 				},
 			},
@@ -62,44 +47,29 @@ func TestValidateRequest(t *testing.T) {
 			name: "Missing 'from' field",
 			apiRequest: &QueueCreationAPI{
 				Data: []struct {
-					ID         string `json:"id"`
-					Type       string `json:"type"`
-					Attributes struct {
-						From          			string            `json:"from"`
-						ReplyTo       			string            `json:"replyTo"`
-						To            			string            `json:"to"`
-						Subject       			string            `json:"subject"`
-						BodyHTML      			string            `json:"bodyHTML"`
-						BodyText      			string            `json:"bodyText"`
-						Attachments   			[]string          `json:"attachments"`
-						CustomHeaders 			map[string]string `json:"customHeaders"`
-						CallbackCallOnSuccess   string            `json:"callbackCallOnSuccess"`
-						CallbackCallOnFailure   string            `json:"callbackCallOnFailure"`
-					} `json:"attributes"`
+					ID                    string            `json:"id"`
+					Type                  string            `json:"type"`
+					From                  string            `json:"from"`
+					ReplyTo               string            `json:"reply_to"`
+					To                    string            `json:"to"`
+					Subject               string            `json:"subject"`
+					BodyHTML              string            `json:"body_html"`
+					BodyText              string            `json:"body_text"`
+					Attachments           []string          `json:"attachments"`
+					CustomHeaders         map[string]string `json:"custom_headers"`
+					CallbackCallOnSuccess string            `json:"callback_on_success"`
+					CallbackCallOnFailure string            `json:"callback_on_failure"`
 				}{
 					{
-						ID:   "userID:queueUUID:messageUUID",
-						Type: "email",
-						Attributes: struct {
-							From          			string            `json:"from"`
-							ReplyTo       			string            `json:"replyTo"`
-							To            			string            `json:"to"`
-							Subject       			string            `json:"subject"`
-							BodyHTML      			string            `json:"bodyHTML"`
-							BodyText      			string            `json:"bodyText"`
-							Attachments   			[]string          `json:"attachments"`
-							CustomHeaders 			map[string]string `json:"customHeaders"`
-							CallbackCallOnSuccess   string            `json:"callbackCallOnSuccess"`
-							CallbackCallOnFailure   string            `json:"callbackCallOnFailure"`
-						}{
-							To:       "to@example.com",
-							ReplyTo:  "reply@example.com",
-							Subject:  "Test Subject",
-							BodyHTML: "<p>Test HTML</p>",
-							BodyText: "Test Text",
-							CallbackCallOnSuccess: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"OK\"}' https://mycallback.it/",
-							CallbackCallOnFailure: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"KO\"}' https://mycallback.it/",
-						},
+						ID:                    "userID:queueUUID:messageUUID",
+						Type:                  "email",
+						To:                    "to@example.com",
+						ReplyTo:               "reply@example.com",
+						Subject:               "Test Subject",
+						BodyHTML:              "<p>Test HTML</p>",
+						BodyText:              "Test Text",
+						CallbackCallOnSuccess: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"OK\"}' https://mycallback.it/",
+						CallbackCallOnFailure: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"KO\"}' https://mycallback.it/",
 					},
 				},
 			},
@@ -109,45 +79,30 @@ func TestValidateRequest(t *testing.T) {
 			name: "Invalid email in 'from' field",
 			apiRequest: &QueueCreationAPI{
 				Data: []struct {
-					ID         string `json:"id"`
-					Type       string `json:"type"`
-					Attributes struct {
-						From          			string            `json:"from"`
-						ReplyTo       			string            `json:"replyTo"`
-						To            			string            `json:"to"`
-						Subject       			string            `json:"subject"`
-						BodyHTML      			string            `json:"bodyHTML"`
-						BodyText      			string            `json:"bodyText"`
-						Attachments   			[]string          `json:"attachments"`
-						CustomHeaders 			map[string]string `json:"customHeaders"`
-						CallbackCallOnSuccess   string            `json:"callbackCallOnSuccess"`
-						CallbackCallOnFailure   string            `json:"callbackCallOnFailure"`
-					} `json:"attributes"`
+					ID                    string            `json:"id"`
+					Type                  string            `json:"type"`
+					From                  string            `json:"from"`
+					ReplyTo               string            `json:"reply_to"`
+					To                    string            `json:"to"`
+					Subject               string            `json:"subject"`
+					BodyHTML              string            `json:"body_html"`
+					BodyText              string            `json:"body_text"`
+					Attachments           []string          `json:"attachments"`
+					CustomHeaders         map[string]string `json:"custom_headers"`
+					CallbackCallOnSuccess string            `json:"callback_on_success"`
+					CallbackCallOnFailure string            `json:"callback_on_failure"`
 				}{
 					{
-						ID:   "userID:queueUUID:messageUUID",
-						Type: "email",
-						Attributes: struct {
-							From          			string            `json:"from"`
-							ReplyTo       			string            `json:"replyTo"`
-							To            			string            `json:"to"`
-							Subject       			string            `json:"subject"`
-							BodyHTML      			string            `json:"bodyHTML"`
-							BodyText      			string            `json:"bodyText"`
-							Attachments   			[]string          `json:"attachments"`
-							CustomHeaders 			map[string]string `json:"customHeaders"`
-							CallbackCallOnSuccess   string            `json:"callbackCallOnSuccess"`
-							CallbackCallOnFailure   string            `json:"callbackCallOnFailure"`
-						}{
-							From:     "invalid-email",
-							ReplyTo:  "reply@example.com",
-							To:       "to@example.com",
-							Subject:  "Test Subject",
-							BodyHTML: "<p>Test HTML</p>",
-							BodyText: "Test Text",
-							CallbackCallOnSuccess: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"OK\"}' https://mycallback.it/",
-							CallbackCallOnFailure: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"KO\"}' https://mycallback.it/",
-						},
+						ID:                    "userID:queueUUID:messageUUID",
+						Type:                  "email",
+						From:                  "invalid-email",
+						ReplyTo:               "reply@example.com",
+						To:                    "to@example.com",
+						Subject:               "Test Subject",
+						BodyHTML:              "<p>Test HTML</p>",
+						BodyText:              "Test Text",
+						CallbackCallOnSuccess: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"OK\"}' https://mycallback.it/",
+						CallbackCallOnFailure: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"KO\"}' https://mycallback.it/",
 					},
 				},
 			},
@@ -157,45 +112,30 @@ func TestValidateRequest(t *testing.T) {
 			name: "Invalid ID format",
 			apiRequest: &QueueCreationAPI{
 				Data: []struct {
-					ID         string `json:"id"`
-					Type       string `json:"type"`
-					Attributes struct {
-						From          			string            `json:"from"`
-						ReplyTo       			string            `json:"replyTo"`
-						To            			string            `json:"to"`
-						Subject       			string            `json:"subject"`
-						BodyHTML      			string            `json:"bodyHTML"`
-						BodyText      			string            `json:"bodyText"`
-						Attachments   			[]string          `json:"attachments"`
-						CustomHeaders 			map[string]string `json:"customHeaders"`
-						CallbackCallOnSuccess   string            `json:"callbackCallOnSuccess"`
-						CallbackCallOnFailure   string            `json:"callbackCallOnFailure"`
-					} `json:"attributes"`
+					ID                    string            `json:"id"`
+					Type                  string            `json:"type"`
+					From                  string            `json:"from"`
+					ReplyTo               string            `json:"reply_to"`
+					To                    string            `json:"to"`
+					Subject               string            `json:"subject"`
+					BodyHTML              string            `json:"body_html"`
+					BodyText              string            `json:"body_text"`
+					Attachments           []string          `json:"attachments"`
+					CustomHeaders         map[string]string `json:"custom_headers"`
+					CallbackCallOnSuccess string            `json:"callback_on_success"`
+					CallbackCallOnFailure string            `json:"callback_on_failure"`
 				}{
 					{
-						ID:   "userID:queueUUID",
-						Type: "email",
-						Attributes: struct {
-							From          			string            `json:"from"`
-							ReplyTo       			string            `json:"replyTo"`
-							To            			string            `json:"to"`
-							Subject       			string            `json:"subject"`
-							BodyHTML      			string            `json:"bodyHTML"`
-							BodyText      			string            `json:"bodyText"`
-							Attachments   			[]string          `json:"attachments"`
-							CustomHeaders 			map[string]string `json:"customHeaders"`
-							CallbackCallOnSuccess   string            `json:"callbackCallOnSuccess"`
-							CallbackCallOnFailure   string            `json:"callbackCallOnFailure"`
-						}{
-							From:     "test@example.com",
-							ReplyTo:  "reply@example.com",
-							To:       "to@example.com",
-							Subject:  "Test Subject",
-							BodyHTML: "<p>Test HTML</p>",
-							BodyText: "Test Text",
-							CallbackCallOnSuccess: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"OK\"}' https://mycallback.it/",
-							CallbackCallOnFailure: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"KO\"}' https://mycallback.it/",
-						},
+						ID:                    "userID:queueUUID",
+						Type:                  "email",
+						From:                  "test@example.com",
+						ReplyTo:               "reply@example.com",
+						To:                    "to@example.com",
+						Subject:               "Test Subject",
+						BodyHTML:              "<p>Test HTML</p>",
+						BodyText:              "Test Text",
+						CallbackCallOnSuccess: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"OK\"}' https://mycallback.it/",
+						CallbackCallOnFailure: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"KO\"}' https://mycallback.it/",
 					},
 				},
 			},
@@ -205,234 +145,159 @@ func TestValidateRequest(t *testing.T) {
 			name: "Missing 'subject' field",
 			apiRequest: &QueueCreationAPI{
 				Data: []struct {
-					ID         string `json:"id"`
-					Type       string `json:"type"`
-					Attributes struct {
-						From          			string            `json:"from"`
-						ReplyTo       			string            `json:"replyTo"`
-						To            			string            `json:"to"`
-						Subject       			string            `json:"subject"`
-						BodyHTML      			string            `json:"bodyHTML"`
-						BodyText      			string            `json:"bodyText"`
-						Attachments   			[]string          `json:"attachments"`
-						CustomHeaders 			map[string]string `json:"customHeaders"`
-						CallbackCallOnSuccess   string            `json:"callbackCallOnSuccess"`
-						CallbackCallOnFailure   string            `json:"callbackCallOnFailure"`
-					} `json:"attributes"`
+					ID                    string            `json:"id"`
+					Type                  string            `json:"type"`
+					From                  string            `json:"from"`
+					ReplyTo               string            `json:"reply_to"`
+					To                    string            `json:"to"`
+					Subject               string            `json:"subject"`
+					BodyHTML              string            `json:"body_html"`
+					BodyText              string            `json:"body_text"`
+					Attachments           []string          `json:"attachments"`
+					CustomHeaders         map[string]string `json:"custom_headers"`
+					CallbackCallOnSuccess string            `json:"callback_on_success"`
+					CallbackCallOnFailure string            `json:"callback_on_failure"`
 				}{
 					{
-						ID:   "userID:queueUUID:messageUUID",
-						Type: "email",
-						Attributes: struct {
-							From          			string            `json:"from"`
-							ReplyTo       			string            `json:"replyTo"`
-							To            			string            `json:"to"`
-							Subject       			string            `json:"subject"`
-							BodyHTML      			string            `json:"bodyHTML"`
-							BodyText      			string            `json:"bodyText"`
-							Attachments   			[]string          `json:"attachments"`
-							CustomHeaders 			map[string]string `json:"customHeaders"`
-							CallbackCallOnSuccess   string            `json:"callbackCallOnSuccess"`
-							CallbackCallOnFailure   string            `json:"callbackCallOnFailure"`
-						}{
-							From:     "test@example.com",
-							ReplyTo:  "reply@example.com",
-							To:       "to@example.com",
-							BodyHTML: "<p>Test HTML</p>",
-							BodyText: "Test Text",
-							CallbackCallOnSuccess: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"OK\"}' https://mycallback.it/",
-							CallbackCallOnFailure: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"KO\"}' https://mycallback.it/",
-						},
+						ID:                    "userID:queueUUID:messageUUID",
+						Type:                  "email",
+						From:                  "test@example.com",
+						ReplyTo:               "reply@example.com",
+						To:                    "to@example.com",
+						BodyHTML:              "<p>Test HTML</p>",
+						BodyText:              "Test Text",
+						CallbackCallOnSuccess: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"OK\"}' https://mycallback.it/",
+						CallbackCallOnFailure: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"KO\"}' https://mycallback.it/",
 					},
 				},
 			},
 			expectedError: "missing 'subject' field",
 		},
 		{
-			name: "Either bodyHTML or bodyText must be provided",
+			name: "Either body_html or body_text must be provided",
 			apiRequest: &QueueCreationAPI{
 				Data: []struct {
-					ID         string `json:"id"`
-					Type       string `json:"type"`
-					Attributes struct {
-						From         			string            `json:"from"`
-						ReplyTo      			string            `json:"replyTo"`
-						To           			string            `json:"to"`
-						Subject      			string            `json:"subject"`
-						BodyHTML     			string            `json:"bodyHTML"`
-						BodyText     			string            `json:"bodyText"`
-						Attachments  			[]string          `json:"attachments"`
-						CustomHeaders			map[string]string `json:"customHeaders"`
-						CallbackCallOnSuccess   string            `json:"callbackCallOnSuccess"`
-						CallbackCallOnFailure   string            `json:"callbackCallOnFailure"`
-					} `json:"attributes"`
+					ID                    string            `json:"id"`
+					Type                  string            `json:"type"`
+					From                  string            `json:"from"`
+					ReplyTo               string            `json:"reply_to"`
+					To                    string            `json:"to"`
+					Subject               string            `json:"subject"`
+					BodyHTML              string            `json:"body_html"`
+					BodyText              string            `json:"body_text"`
+					Attachments           []string          `json:"attachments"`
+					CustomHeaders         map[string]string `json:"custom_headers"`
+					CallbackCallOnSuccess string            `json:"callback_on_success"`
+					CallbackCallOnFailure string            `json:"callback_on_failure"`
 				}{
 					{
-						ID:   "userID:queueUUID:messageUUID",
-						Type: "email",
-						Attributes: struct {
-							From          			string            `json:"from"`
-							ReplyTo       			string            `json:"replyTo"`
-							To            			string            `json:"to"`
-							Subject       			string            `json:"subject"`
-							BodyHTML      			string            `json:"bodyHTML"`
-							BodyText      			string            `json:"bodyText"`
-							Attachments   			[]string          `json:"attachments"`
-							CustomHeaders 			map[string]string `json:"customHeaders"`
-							CallbackCallOnSuccess   string            `json:"callbackCallOnSuccess"`
-							CallbackCallOnFailure   string            `json:"callbackCallOnFailure"`
-						}{
-							From:     "test@example.com",
-							ReplyTo:  "reply@example.com",
-							To:       "to@example.com",
-							Subject:  "Test Subject",
-							BodyHTML: "",
-							BodyText: "",
-							CallbackCallOnSuccess: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"OK\"}' https://mycallback.it/",
-							CallbackCallOnFailure: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"KO\"}' https://mycallback.it/",
-						},
+						ID:                    "userID:queueUUID:messageUUID",
+						Type:                  "email",
+						From:                  "test@example.com",
+						ReplyTo:               "reply@example.com",
+						To:                    "to@example.com",
+						Subject:               "Test Subject",
+						BodyHTML:              "",
+						BodyText:              "",
+						CallbackCallOnSuccess: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"OK\"}' https://mycallback.it/",
+						CallbackCallOnFailure: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"KO\"}' https://mycallback.it/",
 					},
 				},
 			},
-			expectedError: "either 'bodyHTML' or 'bodyText' must be provided",
+			expectedError: "either 'body_html' or 'body_text' must be provided",
 		},
 		{
-			name: "Invalid 'callbackCallOnSuccess' curl command",
+			name: "Invalid 'callback_on_success' curl command",
 			apiRequest: &QueueCreationAPI{
 				Data: []struct {
-					ID         string `json:"id"`
-					Type       string `json:"type"`
-					Attributes struct {
-						From         			string            `json:"from"`
-						ReplyTo      			string            `json:"replyTo"`
-						To           			string            `json:"to"`
-						Subject      			string            `json:"subject"`
-						BodyHTML     			string            `json:"bodyHTML"`
-						BodyText     			string            `json:"bodyText"`
-						Attachments  			[]string          `json:"attachments"`
-						CustomHeaders			map[string]string `json:"customHeaders"`
-						CallbackCallOnSuccess   string            `json:"callbackCallOnSuccess"`
-						CallbackCallOnFailure   string            `json:"callbackCallOnFailure"`
-					} `json:"attributes"`
+					ID                    string            `json:"id"`
+					Type                  string            `json:"type"`
+					From                  string            `json:"from"`
+					ReplyTo               string            `json:"reply_to"`
+					To                    string            `json:"to"`
+					Subject               string            `json:"subject"`
+					BodyHTML              string            `json:"body_html"`
+					BodyText              string            `json:"body_text"`
+					Attachments           []string          `json:"attachments"`
+					CustomHeaders         map[string]string `json:"custom_headers"`
+					CallbackCallOnSuccess string            `json:"callback_on_success"`
+					CallbackCallOnFailure string            `json:"callback_on_failure"`
 				}{
 					{
-						ID:   "userID:queueUUID:messageUUID",
-						Type: "email",
-						Attributes: struct {
-							From          			string            `json:"from"`
-							ReplyTo       			string            `json:"replyTo"`
-							To            			string            `json:"to"`
-							Subject       			string            `json:"subject"`
-							BodyHTML      			string            `json:"bodyHTML"`
-							BodyText      			string            `json:"bodyText"`
-							Attachments   			[]string          `json:"attachments"`
-							CustomHeaders 			map[string]string `json:"customHeaders"`
-							CallbackCallOnSuccess   string            `json:"callbackCallOnSuccess"`
-							CallbackCallOnFailure   string            `json:"callbackCallOnFailure"`
-						}{
-							From:     "test@example.com",
-							ReplyTo:  "reply@example.com",
-							To:       "to@example.com",
-							Subject:  "Test Subject",
-							BodyHTML: "<p>Test HTML</p>",
-							BodyText: "Test Text",
-							CallbackCallOnSuccess: "fake -X POST",
-							CallbackCallOnFailure: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"KO\"}' https://mycallback.it/",
-						},
+						ID:                    "userID:queueUUID:messageUUID",
+						Type:                  "email",
+						From:                  "test@example.com",
+						ReplyTo:               "reply@example.com",
+						To:                    "to@example.com",
+						Subject:               "Test Subject",
+						BodyHTML:              "<p>Test HTML</p>",
+						BodyText:              "Test Text",
+						CallbackCallOnSuccess: "fake -X POST",
+						CallbackCallOnFailure: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"KO\"}' https://mycallback.it/",
 					},
 				},
 			},
-			expectedError: "invalid 'callbackCallOnSuccess' curl command",
+			expectedError: "invalid 'callback_on_success' curl command",
 		},
 		{
-			name: "Invalid 'callbackCallOnFailure' curl command",
+			name: "Invalid 'callback_on_failure' curl command",
 			apiRequest: &QueueCreationAPI{
 				Data: []struct {
-					ID         string `json:"id"`
-					Type       string `json:"type"`
-					Attributes struct {
-						From         			string            `json:"from"`
-						ReplyTo      			string            `json:"replyTo"`
-						To           			string            `json:"to"`
-						Subject      			string            `json:"subject"`
-						BodyHTML     			string            `json:"bodyHTML"`
-						BodyText     			string            `json:"bodyText"`
-						Attachments  			[]string          `json:"attachments"`
-						CustomHeaders			map[string]string `json:"customHeaders"`
-						CallbackCallOnSuccess   string            `json:"callbackCallOnSuccess"`
-						CallbackCallOnFailure   string            `json:"callbackCallOnFailure"`
-					} `json:"attributes"`
+					ID                    string            `json:"id"`
+					Type                  string            `json:"type"`
+					From                  string            `json:"from"`
+					ReplyTo               string            `json:"reply_to"`
+					To                    string            `json:"to"`
+					Subject               string            `json:"subject"`
+					BodyHTML              string            `json:"body_html"`
+					BodyText              string            `json:"body_text"`
+					Attachments           []string          `json:"attachments"`
+					CustomHeaders         map[string]string `json:"custom_headers"`
+					CallbackCallOnSuccess string            `json:"callback_on_success"`
+					CallbackCallOnFailure string            `json:"callback_on_failure"`
 				}{
 					{
-						ID:   "userID:queueUUID:messageUUID",
-						Type: "email",
-						Attributes: struct {
-							From          			string            `json:"from"`
-							ReplyTo       			string            `json:"replyTo"`
-							To            			string            `json:"to"`
-							Subject       			string            `json:"subject"`
-							BodyHTML      			string            `json:"bodyHTML"`
-							BodyText      			string            `json:"bodyText"`
-							Attachments   			[]string          `json:"attachments"`
-							CustomHeaders 			map[string]string `json:"customHeaders"`
-							CallbackCallOnSuccess   string            `json:"callbackCallOnSuccess"`
-							CallbackCallOnFailure   string            `json:"callbackCallOnFailure"`
-						}{
-							From:     "test@example.com",
-							ReplyTo:  "reply@example.com",
-							To:       "to@example.com",
-							Subject:  "Test Subject",
-							BodyHTML: "<p>Test HTML</p>",
-							BodyText: "Test Text",
-							CallbackCallOnSuccess: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"OK\"}' https://mycallback.it/",
-							CallbackCallOnFailure: "fake -X POST",
-						},
+						ID:                    "userID:queueUUID:messageUUID",
+						Type:                  "email",
+						From:                  "test@example.com",
+						ReplyTo:               "reply@example.com",
+						To:                    "to@example.com",
+						Subject:               "Test Subject",
+						BodyHTML:              "<p>Test HTML</p>",
+						BodyText:              "Test Text",
+						CallbackCallOnSuccess: "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"OK\"}' https://mycallback.it/",
+						CallbackCallOnFailure: "fake -X POST",
 					},
 				},
 			},
-			expectedError: "invalid 'callbackCallOnFailure' curl command",
+			expectedError: "invalid 'callback_on_failure' curl command",
 		},
 		{
-			name: "Test callbackCallOnSuccess and callbackCallOnFailure attributes are optionals",
+			name: "Test callback_on_success and callback_on_failure attributes are optionals",
 			apiRequest: &QueueCreationAPI{
 				Data: []struct {
-					ID         string `json:"id"`
-					Type       string `json:"type"`
-					Attributes struct {
-						From         			string            `json:"from"`
-						ReplyTo      			string            `json:"replyTo"`
-						To           			string            `json:"to"`
-						Subject      			string            `json:"subject"`
-						BodyHTML     			string            `json:"bodyHTML"`
-						BodyText     			string            `json:"bodyText"`
-						Attachments  			[]string          `json:"attachments"`
-						CustomHeaders			map[string]string `json:"customHeaders"`
-						CallbackCallOnSuccess   string            `json:"callbackCallOnSuccess"`
-						CallbackCallOnFailure   string            `json:"callbackCallOnFailure"`
-					} `json:"attributes"`
+					ID                    string            `json:"id"`
+					Type                  string            `json:"type"`
+					From                  string            `json:"from"`
+					ReplyTo               string            `json:"reply_to"`
+					To                    string            `json:"to"`
+					Subject               string            `json:"subject"`
+					BodyHTML              string            `json:"body_html"`
+					BodyText              string            `json:"body_text"`
+					Attachments           []string          `json:"attachments"`
+					CustomHeaders         map[string]string `json:"custom_headers"`
+					CallbackCallOnSuccess string            `json:"callback_on_success"`
+					CallbackCallOnFailure string            `json:"callback_on_failure"`
 				}{
 					{
-						ID:   "userID:queueUUID:messageUUID",
-						Type: "email",
-						Attributes: struct {
-							From          			string            `json:"from"`
-							ReplyTo       			string            `json:"replyTo"`
-							To            			string            `json:"to"`
-							Subject       			string            `json:"subject"`
-							BodyHTML      			string            `json:"bodyHTML"`
-							BodyText      			string            `json:"bodyText"`
-							Attachments   			[]string          `json:"attachments"`
-							CustomHeaders 			map[string]string `json:"customHeaders"`
-							CallbackCallOnSuccess   string            `json:"callbackCallOnSuccess"`
-							CallbackCallOnFailure   string            `json:"callbackCallOnFailure"`
-						}{
-							From:     "test@example.com",
-							ReplyTo:  "reply@example.com",
-							To:       "to@example.com",
-							Subject:  "Test Subject",
-							BodyHTML: "<p>Test HTML</p>",
-							BodyText: "Test Text",
-						},
+						ID:       "userID:queueUUID:messageUUID",
+						Type:     "email",
+						From:     "test@example.com",
+						ReplyTo:  "reply@example.com",
+						To:       "to@example.com",
+						Subject:  "Test Subject",
+						BodyHTML: "<p>Test HTML</p>",
+						BodyText: "Test Text",
 					},
 				},
 			},
