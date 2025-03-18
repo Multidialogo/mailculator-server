@@ -32,6 +32,7 @@ type RequestData struct {
 var payloadsDir string
 var expectationsDir string
 var db *dynamodb.Client
+var outboxServiceTest *outbox.Outbox
 
 func init() {
 	// Get the directory where the test source is located (i.e., the directory of this test file)
@@ -51,7 +52,7 @@ func init() {
 		BaseEndpoint: aws.String(os.Getenv("AWS_BASE_ENDPOINT")),
 	}
 	db = dynamodb.NewFromConfig(awsConfig)
-	outboxService = outbox.NewOutbox(db)
+	outboxServiceTest = outbox.NewOutbox(db)
 }
 
 func TestHandleMailQueue(t *testing.T) {
@@ -114,14 +115,15 @@ func TestHandleMailQueue(t *testing.T) {
 	emlFilePath := filepath.Join(draftOutputPath, fmt.Sprintf("%s.EML", messagePath))
 	assert.FileExists(t, emlFilePath, "Expected .eml file to exist at %s, but it does not.", emlFilePath)
 
-	res, err := outboxService.Query(context.TODO(), outbox.StatusProcessing, 25)
+	// Checking new entries in outbox table
+	res, err := outboxServiceTest.Query(context.TODO(), outbox.StatusProcessing, 25)
 	assert.NoError(t, err)
 	assert.Len(t, res, 2)
 
-	tearDown(t)
+	cleanUpDb(t)
 }
 
-func tearDown(t *testing.T) {
+func cleanUpDb(t *testing.T) {
 	query := fmt.Sprintf("SELECT Id, Status FROM \"%v\"", "Outbox")
 	stmt := &dynamodb.ExecuteStatementInput{Statement: aws.String(query)}
 	res, err := db.ExecuteStatement(context.TODO(), stmt)
@@ -212,11 +214,9 @@ func TestHandleMailQueueInvalidIDFormat(t *testing.T) {
 			{
 				"id": "invalid-id-format",
 				"type": "email",
-				"attributes": {
-					"from": "test@example.com",
-					"to": "recipient@example.com",
-					"subject": "Test Subject"
-				}
+				"from": "test@example.com",
+				"to": "recipient@example.com",
+				"subject": "Test Subject"
 			}
 		]
 	}`)
@@ -247,11 +247,9 @@ func TestHandleMailQueueInvalidType(t *testing.T) {
 			{
 				"id": "user1:queue1:message1",
 				"type": "invalid-type",
-				"attributes": {
-					"from": "test@example.com",
-					"to": "recipient@example.com",
-					"subject": "Test Subject"
-				}
+				"from": "test@example.com",
+				"to": "recipient@example.com",
+				"subject": "Test Subject"
 			}
 		]
 	}`)
@@ -282,11 +280,9 @@ func TestHandleMailQueueMissingRequiredFields(t *testing.T) {
 			{
 				"id": "user1:queue1:message1",
 				"type": "email",
-				"attributes": {
-					"from": "",
-					"to": "recipient@example.com",
-					"subject": "Test Subject"
-				}
+				"from": "",
+				"to": "recipient@example.com",
+				"subject": "Test Subject"
 			}
 		]
 	}`)

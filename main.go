@@ -127,8 +127,8 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 
 		messageUUID = ids[2]
 
-		attachmentPaths := make([]string, len(emailData.Attributes.Attachments))
-		for i, attachmentPath := range emailData.Attributes.Attachments {
+		attachmentPaths := make([]string, len(emailData.Attachments))
+		for i, attachmentPath := range emailData.Attachments {
 			attachmentPaths[i] = filepath.Join(inputPath, attachmentPath)
 		}
 
@@ -137,17 +137,17 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 			userID,
 			queueUUID,
 			messageUUID,
-			emailData.Attributes.From,
-			emailData.Attributes.ReplyTo,
-			emailData.Attributes.To,
-			emailData.Attributes.Subject,
-			emailData.Attributes.BodyHTML,
-			emailData.Attributes.BodyText,
+			emailData.From,
+			emailData.ReplyTo,
+			emailData.To,
+			emailData.Subject,
+			emailData.BodyHTML,
+			emailData.BodyText,
 			attachmentPaths,
-			emailData.Attributes.CustomHeaders,
+			emailData.CustomHeaders,
 			time.Now(),
-			emailData.Attributes.CallbackCallOnSuccess,
-			emailData.Attributes.CallbackCallOnFailure,
+			emailData.CallbackCallOnSuccess,
+			emailData.CallbackCallOnFailure,
 		)
 
 		// Append the created email to the slice
