@@ -2,7 +2,7 @@ package API
 
 type QueueCreationAPI struct {
 	Data []struct {
-		ID                    string            `json:"id" validate:"required"`
+		ID                    string            `json:"id" validate:"required,uuid"`
 		Type                  string            `json:"type" validate:"required,eq=email"`
 		From                  string            `json:"from" validate:"required,email"`
 		ReplyTo               string            `json:"reply_to" validate:"required,email"`

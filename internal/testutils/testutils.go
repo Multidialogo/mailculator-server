@@ -1,14 +1,14 @@
 package testutils
 
 import (
-	"runtime"
-	"strings"
-	"time"
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
-	"io"
-	"fmt"
+	"time"
 )
 
 // GetCleanFunctionName returns the clean function name without path qualification
@@ -84,23 +84,14 @@ func LoadFixturesFilesInInputDirectory(testPayloadDir string, testInputDir strin
 
 // GenerateMessagePath generates the path based on the ID format 'userID:queueUUID:messageUUID'
 func GenerateMessagePath(id string) (string, error) {
-	// Split the ID into parts
-	parts := strings.Split(id, ":")
-	if len(parts) != 3 {
-		return "", fmt.Errorf("invalid ID format: expected 'userID:queueUUID:messageUUID'")
+	if id == "" {
+		return "", fmt.Errorf("invalid ID format: expected not empty")
 	}
 
-	// Extract userID, queueUUID, and messageUUID
-	userID := parts[0]
-	queueUUID := parts[1]
-	messageUUID := parts[2]
-
-	// Check if any part is empty
-	if userID == "" || queueUUID == "" || messageUUID == "" {
-		return "", fmt.Errorf("invalid ID format: expected 'userID:queueUUID:messageUUID'")
-	}
+	currentDate := time.Now()
 
 	// Generate the new path
-	path := fmt.Sprintf("users/%s/queues/%s/messages/%s", userID, queueUUID, messageUUID)
+	path := fmt.Sprintf("%d/%s/%s", currentDate.Year(), currentDate.Month(), id)
+
 	return path, nil
 }
