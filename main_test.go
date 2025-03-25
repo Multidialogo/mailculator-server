@@ -141,166 +141,144 @@ func cleanUpDb(t *testing.T) {
 	}
 }
 
-func TestHandleMailQueueInvalidMethod(t *testing.T) {
-	// Create a new HTTP request with an invalid method (GET instead of POST)
-	req, err := http.NewRequest(http.MethodGet, "/email-queues", nil)
-	if err != nil {
-		t.Fatalf("Failed to create request: %v", err)
+func TestHandleMailQueueInvalidRequest(t *testing.T) {
+	tests := []struct {
+		name             string
+		requestMethod    string
+		requestBody      []byte
+		expectedHttpCode int
+		expectedHttpBody string
+	}{
+		{
+			name:          "invalid request method",
+			requestMethod: http.MethodGet,
+			requestBody: []byte(`
+{
+	"data": [
+        {
+			"id": "mmmmmmmm-mmmm-mmmm-mmmm-000000000001",
+			"type": "email",
+			"from": "user@example.com",
+			"reply_to": "user@example.com",
+			"to": "user@example.com",
+			"subject": "string",
+			"body_html": "string",
+			"body_text": "string"
+		}
+	]
+}`),
+			expectedHttpCode: http.StatusMethodNotAllowed,
+			expectedHttpBody: "Invalid request method\n",
+		},
+		{
+			name:             "Missing request data",
+			requestMethod:    http.MethodPost,
+			requestBody:      []byte(`{"data": []}`),
+			expectedHttpCode: http.StatusBadRequest,
+			expectedHttpBody: "Invalid request body: Key: 'QueueCreationAPI.Data' Error:Field validation for 'Data' failed on the 'gt' tag\n",
+		},
+		{
+			name:             "Invalid json",
+			requestMethod:    http.MethodPost,
+			requestBody:      []byte(`{data: []}`),
+			expectedHttpCode: http.StatusBadRequest,
+			expectedHttpBody: "Error unmarshalling request body: invalid character 'd' looking for beginning of object key string\n",
+		},
+		{
+			name:          "Missing required id",
+			requestMethod: http.MethodPost,
+			requestBody: []byte(`
+{
+	"data": [
+        {
+			"id": "",
+			"type": "email",
+			"from": "user@example.com",
+			"reply_to": "user@example.com",
+			"to": "user@example.com",
+			"subject": "string",
+			"body_html": "string",
+			"body_text": "string"
+		}
+	]
+}`),
+			expectedHttpCode: http.StatusBadRequest,
+			expectedHttpBody: "Invalid request body: Key: 'QueueCreationAPI.Data[0].ID' Error:Field validation for 'ID' failed on the 'required' tag\n",
+		},
+		{
+			name:          "Ivalid type",
+			requestMethod: http.MethodPost,
+			requestBody: []byte(`
+{
+	"data": [
+        {
+			"id": "mmmmmmmm-mmmm-mmmm-mmmm-000000000001",
+			"type": "invalid-type",
+			"from": "user@example.com",
+			"reply_to": "user@example.com",
+			"to": "user@example.com",
+			"subject": "string",
+			"body_html": "string",
+			"body_text": "string"
+		}
+	]
+}`),
+			expectedHttpCode: http.StatusBadRequest,
+			expectedHttpBody: "Invalid request body: Key: 'QueueCreationAPI.Data[0].Type' Error:Field validation for 'Type' failed on the 'eq' tag\n",
+		},
+		{
+			name:          "Ivalid recipient email",
+			requestMethod: http.MethodPost,
+			requestBody: []byte(`
+{
+	"data": [
+        {
+			"id": "mmmmmmmm-mmmm-mmmm-mmmm-000000000001",
+			"type": "email",
+			"from": "user@example.com",
+			"reply_to": "user@example.com",
+			"to": "invalid_email_string",
+			"subject": "string",
+			"body_html": "string",
+			"body_text": "string",
+			"attachments": [],
+			"custom_headers": {
+				"property1": "string",
+				"property2": "string"
+			},
+			"callback_on_success": "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"OK\"}' https://mycallback.it",
+      		"callback_on_failure": "curl -X POST -H \"Content-Type: application/json\" -d '{\"status\": \"KO\"}' https://mycallback.it"
+		}
+	]
+}`),
+			expectedHttpCode: http.StatusBadRequest,
+			expectedHttpBody: "Invalid request body: Key: 'QueueCreationAPI.Data[0].To' Error:Field validation for 'To' failed on the 'email' tag\n",
+		},
 	}
-	req.Header.Set("Content-Type", "application/vnd.api+json")
 
-	// Create a recorder to capture the HTTP response
-	rr := httptest.NewRecorder()
-
-	// Call the handler
-	handler := http.HandlerFunc(handleMailQueue)
-	handler.ServeHTTP(rr, req)
-
-	// Assert the response code is 405 Method Not Allowed
-	if rr.Code != http.StatusMethodNotAllowed {
-		t.Errorf("Expected status 405, got %d", rr.Code)
-	}
-}
-
-func TestHandleMailQueueMissingData(t *testing.T) {
-	// Create a request with missing email data
-	requestPayload := []byte(`{"data": []}`)
-	req, err := http.NewRequest(http.MethodPost, "/email-queues", bytes.NewBuffer(requestPayload))
-	if err != nil {
-		t.Fatalf("Failed to create request: %v", err)
-	}
-	req.Header.Set("Content-Type", "application/vnd.api+json")
-
-	// Create a recorder to capture the HTTP response
-	rr := httptest.NewRecorder()
-
-	// Call the handler
-	handler := http.HandlerFunc(handleMailQueue)
-	handler.ServeHTTP(rr, req)
-
-	// Assert the response code is 400 Bad Request (missing email data)
-	if rr.Code != http.StatusBadRequest {
-		t.Errorf("Expected status 400, got %d", rr.Code)
-	}
-}
-
-func TestHandleMailQueueInvalidJSON(t *testing.T) {
-	// Create an invalid JSON request (malformed JSON)
-	requestPayload := []byte(`{data: []}`)
-	req, err := http.NewRequest(http.MethodPost, "/email-queues", bytes.NewBuffer(requestPayload))
-	if err != nil {
-		t.Fatalf("Failed to create request: %v", err)
-	}
-	req.Header.Set("Content-Type", "application/vnd.api+json")
-
-	// Create a recorder to capture the HTTP response
-	rr := httptest.NewRecorder()
-
-	// Call the handler
-	handler := http.HandlerFunc(handleMailQueue)
-	handler.ServeHTTP(rr, req)
-
-	// Assert the response code is 400 Bad Request (invalid JSON)
-	if rr.Code != http.StatusBadRequest {
-		t.Errorf("Expected status 400, got %d", rr.Code)
-	}
-}
-
-func TestHandleMailQueueInvalidIDFormat(t *testing.T) {
-	// Create a request with an invalid ID format (not "userID:queueUUID:messageUUID")
-	requestPayload := []byte(`
-	{
-		"data": [
-			{
-				"id": "invalid-id-format",
-				"type": "email",
-				"from": "test@example.com",
-				"to": "recipient@example.com",
-				"subject": "Test Subject"
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, err := http.NewRequest(tt.requestMethod, "/email-queues", bytes.NewBuffer(tt.requestBody))
+			if err != nil {
+				t.Fatalf("Failed to create request: %v", err)
 			}
-		]
-	}`)
-	req, err := http.NewRequest(http.MethodPost, "/email-queues", bytes.NewBuffer(requestPayload))
-	if err != nil {
-		t.Fatalf("Failed to create request: %v", err)
-	}
-	req.Header.Set("Content-Type", "application/vnd.api+json")
+			req.Header.Set("Content-Type", "application/vnd.api+json")
 
-	// Create a recorder to capture the HTTP response
-	rr := httptest.NewRecorder()
+			// Create a recorder to capture the HTTP response
+			rr := httptest.NewRecorder()
 
-	// Call the handler
-	handler := http.HandlerFunc(handleMailQueue)
-	handler.ServeHTTP(rr, req)
+			// Call the handler
+			handler := http.HandlerFunc(handleMailQueue)
+			handler.ServeHTTP(rr, req)
 
-	// Assert the response code is 400 Bad Request (invalid ID format)
-	if rr.Code != http.StatusBadRequest {
-		t.Errorf("Expected status 400, got %d", rr.Code)
-	}
-}
-
-func TestHandleMailQueueInvalidType(t *testing.T) {
-	// Create a request with an invalid type (not "email")
-	requestPayload := []byte(`
-	{
-		"data": [
-			{
-				"id": "user1:queue1:message1",
-				"type": "invalid-type",
-				"from": "test@example.com",
-				"to": "recipient@example.com",
-				"subject": "Test Subject"
+			// Assert the response code is 405 Method Not Allowed
+			if rr.Code != tt.expectedHttpCode {
+				t.Errorf("Expected status %d, got %d", tt.expectedHttpCode, rr.Code)
 			}
-		]
-	}`)
-	req, err := http.NewRequest(http.MethodPost, "/email-queues", bytes.NewBuffer(requestPayload))
-	if err != nil {
-		t.Fatalf("Failed to create request: %v", err)
-	}
-	req.Header.Set("Content-Type", "application/vnd.api+json")
 
-	// Create a recorder to capture the HTTP response
-	rr := httptest.NewRecorder()
-
-	// Call the handler
-	handler := http.HandlerFunc(handleMailQueue)
-	handler.ServeHTTP(rr, req)
-
-	// Assert the response code is 400 Bad Request (invalid type)
-	if rr.Code != http.StatusBadRequest {
-		t.Errorf("Expected status 400, got %d", rr.Code)
-	}
-}
-
-func TestHandleMailQueueMissingRequiredFields(t *testing.T) {
-	// Create a request with missing required fields (e.g., missing "from", "to", or "subject")
-	requestPayload := []byte(`
-	{
-		"data": [
-			{
-				"id": "user1:queue1:message1",
-				"type": "email",
-				"from": "",
-				"to": "recipient@example.com",
-				"subject": "Test Subject"
+			if rr.Body.String() != tt.expectedHttpBody {
+				t.Errorf("Expected body %s, got %s", tt.expectedHttpBody, rr.Body.String())
 			}
-		]
-	}`)
-	req, err := http.NewRequest(http.MethodPost, "/email-queues", bytes.NewBuffer(requestPayload))
-	if err != nil {
-		t.Fatalf("Failed to create request: %v", err)
-	}
-	req.Header.Set("Content-Type", "application/vnd.api+json")
-
-	// Create a recorder to capture the HTTP response
-	rr := httptest.NewRecorder()
-
-	// Call the handler
-	handler := http.HandlerFunc(handleMailQueue)
-	handler.ServeHTTP(rr, req)
-
-	// Assert the response code is 400 Bad Request (missing "from" field)
-	if rr.Code != http.StatusBadRequest {
-		t.Errorf("Expected status 400, got %d", rr.Code)
+		})
 	}
 }
