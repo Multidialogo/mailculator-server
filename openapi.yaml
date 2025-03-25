@@ -23,7 +23,7 @@ paths:
                     properties:
                       id:
                         type: string
-                        description: "ID in the format 'userID:queueUUID:messageUUID'"
+                        description: "UUID of the message"
                       type:
                         type: string
                         enum: [email]
@@ -79,16 +79,6 @@ paths:
                       type:
                         type: string
                         example: "mail-queue"
-                      id:
-                        type: string
-                        description: "The ID of the created email queue in the format 'userID:queueUUID:messageUUID'"
-                      links:
-                        type: object
-                        properties:
-                          self:
-                            type: string
-                            description: "URL for accessing the created email queue"
-                            example: "/email-queues/{userID}:{queueUUID}"
         '400':
           description: "Invalid request body or parameters"
         '405':

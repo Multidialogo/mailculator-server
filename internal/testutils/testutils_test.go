@@ -1,6 +1,7 @@
 package testutils
 
 import (
+	"fmt"
 	"testing"
 	"time"
 )
@@ -33,6 +34,7 @@ func TestGetUnixEpoch(t *testing.T) {
 }
 
 func TestGenerateMessagePath(t *testing.T) {
+	currentDate := time.Now()
 	tests := []struct {
 		name          string
 		id            string
@@ -41,39 +43,15 @@ func TestGenerateMessagePath(t *testing.T) {
 	}{
 		{
 			name:          "Valid ID format",
-			id:            "userID:queueUUID:messageUUID",
-			expectedPath:  "users/userID/queues/queueUUID/messages/messageUUID",
+			id:            "65ed6bfa-063c-5219-844d-e099c88a17f4",
+			expectedPath:  fmt.Sprintf("%d/%s/65ed6bfa-063c-5219-844d-e099c88a17f4", currentDate.Year(), currentDate.Month()),
 			expectedError: "",
-		},
-		{
-			name:          "Invalid ID format (too few parts)",
-			id:            "userID:queueUUID",
-			expectedPath:  "",
-			expectedError: "invalid ID format: expected 'userID:queueUUID:messageUUID'",
-		},
-		{
-			name:          "Invalid ID format (too many parts)",
-			id:            "userID:queueUUID:messageUUID:extraPart",
-			expectedPath:  "",
-			expectedError: "invalid ID format: expected 'userID:queueUUID:messageUUID'",
-		},
-		{
-			name:          "Invalid ID format (empty parts)",
-			id:            ":queueUUID:messageUUID",
-			expectedPath:  "",
-			expectedError: "invalid ID format: expected 'userID:queueUUID:messageUUID'",
-		},
-		{
-			name:          "Invalid ID format (missing userID)",
-			id:            ":queueUUID:messageUUID",
-			expectedPath:  "",
-			expectedError: "invalid ID format: expected 'userID:queueUUID:messageUUID'",
 		},
 		{
 			name:          "Empty ID",
 			id:            "",
 			expectedPath:  "",
-			expectedError: "invalid ID format: expected 'userID:queueUUID:messageUUID'",
+			expectedError: "invalid ID format: expected not empty",
 		},
 	}
 

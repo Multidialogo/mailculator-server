@@ -156,7 +156,7 @@ func TestHandleMailQueueInvalidRequest(t *testing.T) {
 {
 	"data": [
         {
-			"id": "mmmmmmmm-mmmm-mmmm-mmmm-000000000001",
+			"id": "65ed6bfa-063c-5219-844d-e099c88a17f4",
 			"type": "email",
 			"from": "user@example.com",
 			"reply_to": "user@example.com",
@@ -185,13 +185,13 @@ func TestHandleMailQueueInvalidRequest(t *testing.T) {
 			expectedHttpBody: "Error unmarshalling request body: invalid character 'd' looking for beginning of object key string\n",
 		},
 		{
-			name:          "Missing required id",
+			name:          "Invalid id format",
 			requestMethod: http.MethodPost,
 			requestBody: []byte(`
 {
 	"data": [
         {
-			"id": "",
+			"id": "invalid_id_format",
 			"type": "email",
 			"from": "user@example.com",
 			"reply_to": "user@example.com",
@@ -203,7 +203,7 @@ func TestHandleMailQueueInvalidRequest(t *testing.T) {
 	]
 }`),
 			expectedHttpCode: http.StatusBadRequest,
-			expectedHttpBody: "Invalid request body: Key: 'QueueCreationAPI.Data[0].ID' Error:Field validation for 'ID' failed on the 'required' tag\n",
+			expectedHttpBody: "Invalid request body: Key: 'QueueCreationAPI.Data[0].ID' Error:Field validation for 'ID' failed on the 'uuid' tag\n",
 		},
 		{
 			name:          "Ivalid type",
@@ -212,7 +212,7 @@ func TestHandleMailQueueInvalidRequest(t *testing.T) {
 {
 	"data": [
         {
-			"id": "mmmmmmmm-mmmm-mmmm-mmmm-000000000001",
+			"id": "65ed6bfa-063c-5219-844d-e099c88a17f4",
 			"type": "invalid-type",
 			"from": "user@example.com",
 			"reply_to": "user@example.com",
@@ -233,7 +233,7 @@ func TestHandleMailQueueInvalidRequest(t *testing.T) {
 {
 	"data": [
         {
-			"id": "mmmmmmmm-mmmm-mmmm-mmmm-000000000001",
+			"id": "65ed6bfa-063c-5219-844d-e099c88a17f4",
 			"type": "email",
 			"from": "user@example.com",
 			"reply_to": "user@example.com",

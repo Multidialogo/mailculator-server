@@ -1,18 +1,18 @@
 package service
 
 import (
+	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"mailculator/internal/model"
 	"mailculator/internal/utils"
 	"mime/multipart"
 	"mime/quotedprintable"
 	"net/mail"
+	"net/textproto"
 	"os"
 	"path/filepath"
 	"time"
-	"io/ioutil"
-	"encoding/base64"
-	"net/textproto"
 )
 
 type EmailQueueStorage struct {

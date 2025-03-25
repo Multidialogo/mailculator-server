@@ -44,9 +44,7 @@ func TestEmailQueueStorage_SaveEmailsAsEML(t *testing.T) {
 		{
 			name: "Valid email",
 			email: model.NewEmail(
-				"user1",
-				"queue1",
-				"message1",
+				"65ed6bfa-063c-5219-844d-e099c88a17f4",
 				"sender@test.multidialogo.it",
 				"sender@test.multidialogo.it",
 				"recipient@test.multidialogo.it",
@@ -64,15 +62,13 @@ func TestEmailQueueStorage_SaveEmailsAsEML(t *testing.T) {
 				"",
 				"",
 			),
-			expectedEMLPath:     "users/user1/queues/queue1/messages/message1.EML",
-			expectedEMLFileName: "user1:queue1:message1.EML",
+			expectedEMLPath:     "1970/January/65ed6bfa-063c-5219-844d-e099c88a17f4.EML",
+			expectedEMLFileName: "65ed6bfa-063c-5219-844d-e099c88a17f4.EML",
 		},
 		{
 			name: "Valid email with Reply-To",
 			email: model.NewEmail(
-				"user1",
-				"queue1",
-				"message2",
+				"ff0fb587-e29b-4278-bbab-a525196b8917",
 				"sender@test.multidialogo.it",
 				"no-reply@test.multidialogo.it",
 				"recipient2@test.multidialogo.it",
@@ -87,8 +83,8 @@ func TestEmailQueueStorage_SaveEmailsAsEML(t *testing.T) {
 				"",
 				"",
 			),
-			expectedEMLPath:     "users/user1/queues/queue1/messages/message2.EML",
-			expectedEMLFileName: "user1:queue1:message2.EML",
+			expectedEMLPath:     "1970/January/ff0fb587-e29b-4278-bbab-a525196b8917.EML",
+			expectedEMLFileName: "ff0fb587-e29b-4278-bbab-a525196b8917.EML",
 		},
 	}
 

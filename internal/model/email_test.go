@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"mailculator/internal/testutils"
 	"reflect"
 	"testing"
@@ -9,8 +10,6 @@ import (
 func TestNewEmail(t *testing.T) {
 	tests := []struct {
 		name          string
-		userID        string
-		queueUUID     string
 		messageUUID   string
 		from          string
 		replyTo       string
@@ -25,9 +24,7 @@ func TestNewEmail(t *testing.T) {
 	}{
 		{
 			name:          "valid email creation",
-			userID:        "user123",
-			queueUUID:     "queue456",
-			messageUUID:   "message789",
+			messageUUID:   "65ed6bfa-063c-5219-844d-e099c88a17f4",
 			from:          "sender@example.com",
 			replyTo:       "replyto@example.com",
 			to:            "recipient@example.com",
@@ -38,9 +35,7 @@ func TestNewEmail(t *testing.T) {
 			customHeaders: map[string]string{"X-Custom-Header": "HeaderValue"},
 			expectPanic:   false,
 			expectedEmail: &Email{
-				userID:        "user123",
-				queueUUID:     "queue456",
-				messageUUID:   "message789",
+				messageUUID:   "65ed6bfa-063c-5219-844d-e099c88a17f4",
 				from:          "sender@example.com",
 				replyTo:       "replyto@example.com",
 				to:            "recipient@example.com",
@@ -49,15 +44,13 @@ func TestNewEmail(t *testing.T) {
 				bodyText:      "Plain Text Body",
 				attachments:   []string{"file1.txt", "file2.txt"},
 				customHeaders: map[string]string{"X-Custom-Header": "HeaderValue"},
-				path:          "users/user123/queues/queue456/messages/message789",
+				path:          fmt.Sprintf("%d/%s/65ed6bfa-063c-5219-844d-e099c88a17f4", testutils.GetUnixEpoch().Year(), testutils.GetUnixEpoch().Month()),
 				date:          testutils.GetUnixEpoch(),
 			},
 		},
 		{
 			name:        "missing required fields (from)",
-			userID:      "user123",
-			queueUUID:   "queue456",
-			messageUUID: "message789",
+			messageUUID: "65ed6bfa-063c-5219-844d-e099c88a17f4",
 			from:        "",
 			replyTo:     "replyto@example.com",
 			to:          "recipient@example.com",
@@ -65,9 +58,7 @@ func TestNewEmail(t *testing.T) {
 		},
 		{
 			name:        "missing required fields (replyTo)",
-			userID:      "user123",
-			queueUUID:   "queue456",
-			messageUUID: "message789",
+			messageUUID: "65ed6bfa-063c-5219-844d-e099c88a17f4",
 			from:        "sender@example.com",
 			replyTo:     "",
 			to:          "recipient@example.com",
@@ -86,7 +77,7 @@ func TestNewEmail(t *testing.T) {
 			}
 
 			email := NewEmail(
-				tt.userID, tt.queueUUID, tt.messageUUID, tt.from, tt.replyTo, tt.to,
+				tt.messageUUID, tt.from, tt.replyTo, tt.to,
 				tt.subject, tt.bodyHTML, tt.bodyText, tt.attachments, tt.customHeaders,
 				testutils.GetUnixEpoch(), "", "",
 			)
@@ -120,7 +111,7 @@ func TestNewEmail(t *testing.T) {
 
 func TestEmailGetters(t *testing.T) {
 	email := NewEmail(
-		"user123", "queue456", "message789", "sender@example.com", "replyto@example.com",
+		"65ed6bfa-063c-5219-844d-e099c88a17f4", "sender@example.com", "replyto@example.com",
 		"recipient@example.com", "Subject", "<h1>HTML</h1>", "Plain Text",
 		[]string{"file1.txt"}, map[string]string{"X-Custom-Header": "HeaderValue"},
 		testutils.GetUnixEpoch(), "", "",
@@ -131,16 +122,14 @@ func TestEmailGetters(t *testing.T) {
 		value  interface{}
 		getter func() interface{}
 	}{
-		{"UserID", "user123", func() interface{} { return email.UserID() }},
-		{"QueueUUID", "queue456", func() interface{} { return email.QueueUUID() }},
-		{"MessageUUID", "message789", func() interface{} { return email.MessageUUID() }},
+		{"MessageUUID", "65ed6bfa-063c-5219-844d-e099c88a17f4", func() interface{} { return email.MessageUUID() }},
 		{"From", "sender@example.com", func() interface{} { return email.From() }},
 		{"ReplyTo", "replyto@example.com", func() interface{} { return email.ReplyTo() }},
 		{"To", "recipient@example.com", func() interface{} { return email.To() }},
 		{"Subject", "Subject", func() interface{} { return email.Subject() }},
 		{"BodyHTML", "<h1>HTML</h1>", func() interface{} { return email.BodyHTML() }},
 		{"BodyText", "Plain Text", func() interface{} { return email.BodyText() }},
-		{"Path", "users/user123/queues/queue456/messages/message789", func() interface{} { return email.Path() }},
+		{"Path", "1970/January/65ed6bfa-063c-5219-844d-e099c88a17f4", func() interface{} { return email.Path() }},
 		{"Date", testutils.GetUnixEpoch(), func() interface{} { return email.Date() }},
 	}
 
