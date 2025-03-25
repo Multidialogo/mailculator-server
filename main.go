@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/go-playground/validator/v10"
 	"log"
 	"mailculator/internal/API"
 	"mailculator/internal/config"
@@ -90,9 +91,10 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate the request
-	if err := API.ValidateRequest(&APIRequest); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	validate := validator.New(validator.WithRequiredStructEnabled())
+	err := validate.Struct(APIRequest)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Invalid request body: %v", err), http.StatusBadRequest)
 		return
 	}
 
@@ -166,7 +168,7 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Save the emails using the EmailQueueStorage service
-	err := emailQueueStorage.SaveEmailsAsEML(emails)
+	err = emailQueueStorage.SaveEmailsAsEML(emails)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error saving emails: %v", err), http.StatusInternalServerError)
 		return
