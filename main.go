@@ -17,7 +17,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 )
 
@@ -101,33 +100,8 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 	// Process each email data in the request
 	var emails []*model.Email
 	var emailsOutbox []outbox.Email
-	var userID string
-	var messageUUID string
-	var queueUUID string
 
 	for _, emailData := range APIRequest.Data {
-		// Extract userID and messageUUID from the ID field
-		ids := strings.Split(emailData.ID, ":")
-
-		// Check if userID and messageUUID are already set and match the current ones
-		if userID != "" && userID != ids[0] {
-			http.Error(w, "User ID mismatch", http.StatusBadRequest)
-			return
-		}
-		if queueUUID != "" && queueUUID != ids[1] {
-			http.Error(w, "Queue UUID mismatch", http.StatusBadRequest)
-			return
-		}
-
-		// Set the userID and messageUUID if they haven't been set yet
-		if userID == "" {
-			userID = ids[0]
-		}
-		if queueUUID == "" {
-			queueUUID = ids[1]
-		}
-
-		messageUUID = ids[2]
 
 		attachmentPaths := make([]string, len(emailData.Attachments))
 		for i, attachmentPath := range emailData.Attachments {
@@ -136,9 +110,7 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 
 		// Create a new email using the constructor
 		email := model.NewEmail(
-			userID,
-			queueUUID,
-			messageUUID,
+			emailData.ID,
 			emailData.From,
 			emailData.ReplyTo,
 			emailData.To,
@@ -189,27 +161,13 @@ func handleMailQueue(w http.ResponseWriter, r *http.Request) {
 	// JSON:APIRequest-compliant response
 	response := struct {
 		Data struct {
-			Type  string `json:"type"`
-			ID    string `json:"id"`
-			Links struct {
-				Self string `json:"self"`
-			} `json:"links"`
+			Type string `json:"type"`
 		} `json:"data"`
 	}{
 		Data: struct {
-			Type  string `json:"type"`
-			ID    string `json:"id"`
-			Links struct {
-				Self string `json:"self"`
-			} `json:"links"`
+			Type string `json:"type"`
 		}{
 			Type: "mail-queue",
-			ID:   fmt.Sprintf("%s:%s", userID, queueUUID),
-			Links: struct {
-				Self string `json:"self"`
-			}{
-				Self: fmt.Sprintf("/email-queues/%s:%s", userID, queueUUID),
-			},
 		},
 	}
 
