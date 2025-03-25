@@ -1,7 +1,7 @@
 {
   "data": [
     {
-      "id": "user123:queue456:message789",
+      "id": "65ed6bfa-063c-5219-844d-e099c88a17f4",
       "type": "email",
       "from": "sender@example.com",
       "reply_to": "reply-to@example.com",
@@ -15,7 +15,7 @@
       }
     },
     {
-      "id": "user123:queue456:message790",
+      "id": "ff0fb587-e29b-4278-bbab-a525196b8917",
       "type": "email",
       "from": "sender@example.com",
       "reply_to": "sender@example.com",

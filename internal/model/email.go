@@ -7,8 +7,6 @@ import (
 
 // Email represents an immutable email with recipient, subject, body, attachments, and custom headers.
 type Email struct {
-	userID                string
-	queueUUID             string
 	messageUUID           string
 	from                  string
 	replyTo               string
@@ -25,11 +23,12 @@ type Email struct {
 }
 
 // NewEmail creates a new immutable Email instance.
-func NewEmail(userID, queueUUID, messageUUID, from, replyTo, to, subject, bodyHTML, bodyText string, attachments []string, customHeaders map[string]string, date time.Time, callbackCallOnSuccess string, callbackCallOnFailure string) *Email {
-	if userID == "" || queueUUID == "" || messageUUID == "" || from == "" || replyTo == "" || to == "" {
-		panic("userID, queueUUID, messageUUID, from, replyTo, and to cannot be empty")
+func NewEmail(messageUUID, from, replyTo, to, subject, bodyHTML, bodyText string, attachments []string, customHeaders map[string]string, date time.Time, callbackCallOnSuccess string, callbackCallOnFailure string) *Email {
+	if messageUUID == "" || from == "" || replyTo == "" || to == "" {
+		panic("messageUUID, from, replyTo, and to cannot be empty")
 	}
-	path := fmt.Sprintf("users/%s/queues/%s/messages/%s", userID, queueUUID, messageUUID)
+
+	path := fmt.Sprintf("%d/%s/%s", date.Year(), date.Month(), messageUUID)
 
 	// Clone slices and maps to enforce immutability
 	clonedAttachments := make([]string, len(attachments))
@@ -41,8 +40,6 @@ func NewEmail(userID, queueUUID, messageUUID, from, replyTo, to, subject, bodyHT
 	}
 
 	return &Email{
-		userID:                userID,
-		queueUUID:             queueUUID,
 		messageUUID:           messageUUID,
 		from:                  from,
 		replyTo:               replyTo,
@@ -58,12 +55,6 @@ func NewEmail(userID, queueUUID, messageUUID, from, replyTo, to, subject, bodyHT
 		callbackCallOnFailure: callbackCallOnFailure,
 	}
 }
-
-// UserID returns the user ID.
-func (e *Email) UserID() string { return e.userID }
-
-// QueueUUID returns the queue UUID.
-func (e *Email) QueueUUID() string { return e.queueUUID }
 
 // MessageUUID returns the message UUID.
 func (e *Email) MessageUUID() string { return e.messageUUID }
