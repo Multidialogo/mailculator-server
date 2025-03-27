@@ -2,7 +2,7 @@ package model
 
 import (
 	"fmt"
-	"mailculator/internal/testutils"
+	"multicarrier-email-api/internal/testutils"
 	"reflect"
 	"testing"
 )

@@ -7,25 +7,45 @@
 - docker compose v2
 - git
 
-## Scripts
+## Provisioning
 
-### How to start/stop local development environment
+### Scripts
+
+#### How to start local development environment dependencies
 
 ```bash
-/bin/sh ./local/start-local-env.sh
+docker compose --profile devcontainer-deps up -d --build
 ```
 
 ```bash
-/bin/sh ./local/stop-local-env.sh
+docker compose --profile devcontainer-deps down --remove-orphans
 ```
 
-### Run tests locally
+#### Run tests
 
 ```bash
-/bin/sh ./local/test.sh
+/bin/sh ./run-tests-local.sh
 ```
 
-### API clients
+A coverage report will be exported at `.coverage/report.html`
+
+```bash
+open ".coverage/report.html"
+```
+
+#### Simulate deployment stages
+
+```bash
+/bin/sh ./run-tests-ci.sh
+```
+
+### Graphic tools
+
+- database administration (dbadmin): http://localhost:9001
+- smtp (mailpit): http://localhost:9002
+
+
+## API clients generation
 
 Generate clients from open api:
 
@@ -46,4 +66,3 @@ docker run --rm -v ${PWD}:/local openapitools/openapi-generator-cli generate \
 ```
 
 Then you will find the generated client in the directory client/php in the root path of this repository.
-

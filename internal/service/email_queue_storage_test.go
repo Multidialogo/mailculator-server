@@ -3,8 +3,8 @@ package service
 import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"mailculator/internal/model"
-	"mailculator/internal/testutils"
+	"multicarrier-email-api/internal/model"
+	"multicarrier-email-api/internal/testutils"
 	"os"
 	"path/filepath"
 	"runtime"
