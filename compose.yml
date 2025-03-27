@@ -1,0 +1,109 @@
+networks:
+  mailculator-api-deployments-net:
+
+
+services:
+  test:
+    container_name: mailculator_api_test
+    profiles:
+      - 'test'
+    image: golang:1.24-alpine
+    working_dir: /app
+    environment:
+      AWS_BASE_ENDPOINT: 'http://127.0.0.1:8001'
+      AWS_ACCESS_KEY_ID: 'local'
+      AWS_SECRET_ACCESS_KEY: 'local'
+      AWS_REGION: 'eu-west-1'
+    command: ['sh', '-c', 'go mod tidy && go test ./...']
+    volumes:
+      - ./.cache/go:/go/pkg/mod:cached
+      - .:/app
+    network_mode: host
+
+  dynamodb: &dynamodb-base
+    profiles:
+      - 'none'
+    image: amazon/dynamodb-local:latest
+    healthcheck:
+      test: ['CMD-SHELL', '[ "$(curl -s -o /dev/null -I -w ''%{http_code}'' http://localhost:8000)" == "400" ]']
+      interval: 2s
+      timeout: 2s
+      retries: 10
+    command: '-jar DynamoDBLocal.jar'
+    ports:
+      - '127.0.0.1:8001:8000'
+    networks:
+      - mailculator-api-deployments-net
+
+  dynamodb-test:
+    <<: *dynamodb-base
+    container_name: mailculator_api_dynamodb_test
+    profiles:
+      - 'test-deps'
+
+  dynamodb-devcontainer:
+    <<: *dynamodb-base
+    container_name: mailculator_api_dynamodb_devcontainer
+    profiles:
+      - 'devcontainer-deps'
+
+  dynamodb-setup: &dynamodb-setup-base
+    profiles:
+      - 'none'
+    image: amazon/aws-cli
+    volumes:
+      - './docker/dynamodb:/scripts'
+    environment:
+      AWS_ACCESS_KEY_ID: 'local'
+      AWS_SECRET_ACCESS_KEY: 'local'
+      AWS_REGION: 'eu-west-1'
+    entrypoint: ['sh', '/scripts/init.sh']
+    networks:
+      - mailculator-api-deployments-net
+
+  dynamodb-setup-test:
+    <<: *dynamodb-setup-base
+    container_name: mailculator_api_dynamodb_setup_test
+    profiles:
+      - 'test-deps'
+    command: ['dynamodb-test']
+    depends_on:
+      dynamodb-test:
+        condition: service_healthy
+
+  wait-for-dynamodb-setup-test:
+    container_name: mailculator_api_wait_for_dynamodb_setup_test
+    profiles:
+      - 'test-deps'
+    image: golang:1.24-alpine
+    command: ['echo', 'Service dynamodb-setup-test is done']
+    networks:
+      - mailculator-api-deployments-net
+    depends_on:
+      dynamodb-setup-test:
+        condition: service_completed_successfully
+
+  dynamodb-setup-devcontainer:
+    <<: *dynamodb-setup-base
+    container_name: mailculator_api_dynamodb_setup_devcontainer
+    profiles:
+      - 'devcontainer-deps'
+    command: ['dynamodb-devcontainer']
+    depends_on:
+      dynamodb-devcontainer:
+        condition: service_healthy
+
+  dbadmin:
+    container_name: mailculator_api_dbadmin_devcontainer
+    profiles:
+      - 'devcontainer-deps'
+    image: aaronshaf/dynamodb-admin
+    ports:
+      - '127.0.0.1:9001:8001'
+    environment:
+      DYNAMO_ENDPOINT: 'http://dynamodb-devcontainer:8000'
+      AWS_REGION: 'eu-west-1'
+      AWS_ACCESS_KEY_ID: 'local'
+      AWS_SECRET_ACCESS_KEY: 'local'
+    networks:
+      - mailculator-api-deployments-net
