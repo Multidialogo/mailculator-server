@@ -1,8 +1,9 @@
-.env
-tmp/*
-.idea
 data/input
 data/maildir
-!*/.gitkeep
-internal/pkg/*
-local/docker/app/log
+
+**/.cache
+
+.coverage
+deployments/build
+
+!**/.gitkeep

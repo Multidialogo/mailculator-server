@@ -9,7 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"mailculator/internal/outbox"
+	"multicarrier-email-api/internal/outbox"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -18,8 +18,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"mailculator/internal/config"
-	"mailculator/internal/testutils"
+	"multicarrier-email-api/internal/config"
+	"multicarrier-email-api/internal/testutils"
 )
 
 // Define the simplified structure of the JSON

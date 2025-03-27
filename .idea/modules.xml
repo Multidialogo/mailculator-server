@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/multicarrier-email.iml" filepath="$PROJECT_DIR$/.idea/multicarrier-email.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/multicarrier-email-api.iml" filepath="$PROJECT_DIR$/.idea/multicarrier-email-api.iml" />
     </modules>
   </component>
 </project>
