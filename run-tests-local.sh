@@ -12,6 +12,8 @@ coverage() {
   export AWS_ACCESS_KEY_ID=local
   export AWS_SECRET_ACCESS_KEY=local
   export AWS_REGION=eu-west-1
+  export ATTACHMENTS_BASE_PATH=testdata/attachments
+  export EML_STORAGE_PATH=testdata/.out/eml
 
   go mod tidy
   go test ./... -coverpkg=./... -coverprofile=$temp_path -v
