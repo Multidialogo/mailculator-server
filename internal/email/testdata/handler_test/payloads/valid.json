@@ -1,0 +1,26 @@
+{
+  "data": [
+    {
+      "id": "65ed6bfa-063c-5219-844d-e099c88a17f4",
+      "from": "sender@example.com",
+      "reply_to": "reply-to@example.com",
+      "to": "example@example.com",
+      "subject": "Test Subject",
+      "body_html": "<p>Hello, World!</p>",
+      "body_text": "Hello, World!",
+      "attachments": ["/TestHandleMailQueue/attachment01.pdf", "/TestHandleMailQueue/attachment02.pdf"]
+    },
+    {
+      "id": "ff0fb587-e29b-4278-bbab-a525196b8917",
+      "from": "sender@example.com",
+      "reply_to": "sender@example.com",
+      "to": "example@example.com",
+      "subject": "Test Subject",
+      "body_html": "<p>Hello, World!</p>",
+      "body_text": "Hello, World!",
+      "custom_headers": {
+        "X-Custom-Header": "CustomValue"
+      }
+    }
+  ]
+}

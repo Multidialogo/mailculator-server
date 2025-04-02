@@ -1,0 +1,14 @@
+aws:
+  key: "${AWS_ACCESS_KEY_ID}"
+  secret: "${AWS_SECRET_ACCESS_KEY}"
+  region: "${AWS_REGION}"
+  base-endpoint: "${AWS_BASE_ENDPOINT}"
+
+attachments:
+  base-path: "${ATTACHMENTS_BASE_PATH}"
+
+eml-storage:
+  path: "${EML_STORAGE_PATH}"
+
+server:
+  port: 8080

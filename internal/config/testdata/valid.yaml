@@ -1,0 +1,14 @@
+aws:
+  key: dummy-key
+  secret: dummy-secret
+  region: "dummy-region-with-quotation-marks"
+  base-endpoint: dummy-base-endpoint
+
+attachments:
+  base-path: "/efs/attachments"
+
+eml-storage:
+  path: "/efs/eml"
+
+server:
+  port: 8080
