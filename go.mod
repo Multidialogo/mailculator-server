@@ -4,7 +4,6 @@ go 1.24
 
 require (
 	github.com/h2non/filetype v1.1.3
-	github.com/joho/godotenv v1.5.1
 	github.com/stretchr/testify v1.8.4 // or the latest version
 )
 
@@ -15,6 +14,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.41.1
 	github.com/go-playground/validator/v10 v10.25.0
 	github.com/google/uuid v1.6.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -34,5 +34,4 @@ require (
 	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

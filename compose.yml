@@ -14,6 +14,8 @@ services:
       AWS_ACCESS_KEY_ID: 'local'
       AWS_SECRET_ACCESS_KEY: 'local'
       AWS_REGION: 'eu-west-1'
+      ATTACHMENTS_BASE_PATH: 'testdata/attachments'
+      EML_STORAGE_PATH: 'testdata/.out/eml'
     command: ['sh', '-c', 'go mod tidy && go test ./...']
     volumes:
       - ./.cache/go:/go/pkg/mod:cached

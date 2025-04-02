@@ -1,9 +1,6 @@
-data/input
-data/maildir
-
 **/.cache
 
 .coverage
-deployments/build
+**/.out/**
 
 !**/.gitkeep
