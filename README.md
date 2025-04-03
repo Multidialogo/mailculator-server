@@ -42,7 +42,7 @@ open ".coverage/report.html"
 #### Deploy local docker image
 
 ```shell
-docker build -t multicarrier-email-api:local .
+docker build --target deploy -t multicarrier-email-api:local .
 ```
 
 ### Graphic tools
