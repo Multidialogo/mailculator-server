@@ -3,6 +3,7 @@ package email
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -27,6 +28,7 @@ func New(dynamo *dynamodb.Client) *Database {
 func (db *Database) getMetaAttributes(status string, emlFilePath string) map[string]interface{} {
 	return map[string]interface{}{
 		"Latest":      status,
+		"CreatedAt":   time.Now().Format(time.RFC3339),
 		"EMLFilePath": emlFilePath,
 	}
 }
