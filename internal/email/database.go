@@ -14,7 +14,7 @@ import (
 const (
 	tableName     = "Outbox"
 	statusMeta    = "_META"
-	statusInitial = "PENDING"
+	statusInitial = "READY"
 )
 
 type Database struct {

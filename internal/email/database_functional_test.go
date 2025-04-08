@@ -49,7 +49,7 @@ func TestOutboxComponentWorkflow(t *testing.T) {
 	of := testutils.NewEmailDatabaseFacade()
 
 	// no record in dynamo
-	res, err := of.Query(context.TODO(), "PENDING", 25)
+	res, err := of.Query(context.TODO(), "READY", 25)
 	require.NoError(t, err)
 	require.Len(t, res, 0)
 
@@ -57,15 +57,15 @@ func TestOutboxComponentWorkflow(t *testing.T) {
 	firstId := uuid.NewString()
 	err = sut.Insert(context.TODO(), firstId, "/")
 	require.NoErrorf(t, err, "failed inserting id %s, error: %v", firstId, err)
-	fixtures[firstId] = "PENDING"
+	fixtures[firstId] = "READY"
 
 	secondId := uuid.NewString()
 	err = sut.Insert(context.TODO(), secondId, "/")
 	require.NoErrorf(t, err, "failed inserting id %s, error: %v", secondId, err)
-	fixtures[secondId] = "PENDING"
+	fixtures[secondId] = "READY"
 
 	// should find 2 records with status pending
-	res, err = of.Query(context.TODO(), "PENDING", 25)
+	res, err = of.Query(context.TODO(), "READY", 25)
 	require.NoError(t, err)
 	require.Len(t, res, 2)
 
@@ -78,8 +78,8 @@ func TestOutboxComponentWorkflow(t *testing.T) {
 	require.NoError(t, err)
 	delete(fixtures, firstId)
 
-	// now it should be 1 record with status PENDING
-	res, err = of.Query(context.TODO(), "PENDING", 25)
+	// now it should be 1 record with status READY
+	res, err = of.Query(context.TODO(), "READY", 25)
 	require.NoError(t, err)
 	require.Len(t, res, 1)
 
@@ -88,8 +88,8 @@ func TestOutboxComponentWorkflow(t *testing.T) {
 	require.NoError(t, err)
 	delete(fixtures, secondId)
 
-	// now it should be 0 record with status PENDING
-	res, err = of.Query(context.TODO(), "PENDING", 25)
+	// now it should be 0 record with status READY
+	res, err = of.Query(context.TODO(), "READY", 25)
 	require.NoError(t, err)
 	require.Len(t, res, 0)
 }
