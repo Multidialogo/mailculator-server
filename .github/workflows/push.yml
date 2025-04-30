@@ -1,0 +1,41 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches:
+      - develop
+  merge_group:
+    branches:
+      - develop
+
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read  # This is required for actions/checkout
+
+env:
+  SERVICE_NAME: mailculator-server
+
+_anchors:
+  environment-selection: &environment-selection
+    name: Select Environment
+    run: |
+      if [ "${{ github.ref }}" == "refs/heads/master" ]; then
+        echo "ENVIRONMENT=prod" >> $GITHUB_ENV
+      elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
+        echo "ENVIRONMENT=stage" >> $GITHUB_ENV
+      fi
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - *environment-selection
+
+      # Step 1: Checkout the repository
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # Step 2: Build the package
+      - name: Build
+        run: chmod +x ./build-ci.sh && ./build-ci.sh
+

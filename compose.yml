@@ -3,6 +3,18 @@ networks:
 
 
 services:
+  build:
+    container_name: mailculator_api_build
+    profiles:
+      - 'build'
+    image: golang:1.24-alpine
+    working_dir: /app
+    command: ["sh", "-c", "go mod tidy && go build -o ./bin/bootstrap"]
+    volumes:
+      - ./.cache/go:/go/pkg/mod:cached
+      - .:/app
+    network_mode: host
+
   test:
     container_name: mailculator_api_test
     profiles:
