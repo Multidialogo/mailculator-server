@@ -45,5 +45,7 @@ jobs:
 
       # Step 4: Build & push image
       - name: Build
+        env:
+          DOCKER_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: chmod +x ./build-ci.sh && ./build-ci.sh
 
