@@ -5,9 +5,13 @@ root_dir="$script_dir"
 
 mkdir -p .cache/venv
 
+IMAGE_NAME="${ENVIRONMENT}-${SERVICE_NAME}"
+
 build() {
   (
-    docker compose run --rm --build build
+    docker build --target "${IMAGE_NAME}" .
+    docker tag "${IMAGE_NAME}:latest" "${DOCKER_REGISTRY}/${IMAGE_NAME}:latest"
+    docker tag "${IMAGE_NAME}:latest" "${DOCKER_REGISTRY}/${IMAGE_NAME}:${CUSTOM_TAG}"
   )
 }
 
