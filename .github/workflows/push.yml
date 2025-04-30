@@ -35,3 +35,8 @@ jobs:
       - name: Build
         run: chmod +x ./build-ci.sh && ./build-ci.sh
 
+      # Step 3: Build the package
+      - name: Build
+        run: env
+#        run: chmod +x ./build-ci.sh && ./build-ci.sh
+
