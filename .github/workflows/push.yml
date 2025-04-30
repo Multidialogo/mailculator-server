@@ -15,21 +15,17 @@ permissions:
 env:
   SERVICE_NAME: mailculator-server
 
-_anchors:
-  environment-selection: &environment-selection
-    name: Select Environment
-    run: |
-      if [ "${{ github.ref }}" == "refs/heads/master" ]; then
-        echo "ENVIRONMENT=prod" >> $GITHUB_ENV
-      elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
-        echo "ENVIRONMENT=stage" >> $GITHUB_ENV
-      fi
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - *environment-selection
+      - name: Select Environment
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/master" ]; then
+            echo "ENVIRONMENT=prod" >> $GITHUB_ENV
+          elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
+            echo "ENVIRONMENT=stage" >> $GITHUB_ENV
+          fi
 
       # Step 1: Checkout the repository
       - name: Checkout Code
