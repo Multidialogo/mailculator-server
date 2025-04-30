@@ -32,8 +32,8 @@ jobs:
         uses: actions/checkout@v3
 
       # Step 2: Build the package
-      - name: Build
-        run: chmod +x ./build-ci.sh && ./build-ci.sh
+#      - name: Build
+#        run: chmod +x ./build-ci.sh && ./build-ci.sh
 
       # Step 3: Build the package
       - name: Build
