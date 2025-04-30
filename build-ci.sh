@@ -4,8 +4,8 @@ IMAGE_NAME="${ENVIRONMENT}-${SERVICE_NAME}"
 
 build() {
   (
-    docker image ls
     docker build --target "${IMAGE_NAME}" .
+    docker image ls
     docker tag "${IMAGE_NAME}:latest" "${DOCKER_REGISTRY}/${IMAGE_NAME}:latest"
     docker tag "${IMAGE_NAME}:latest" "${DOCKER_REGISTRY}/${IMAGE_NAME}:${GITHUB_SHA}"
     docker push "${DOCKER_REGISTRY}/${IMAGE_NAME}" --all-tags
