@@ -1,17 +1,13 @@
 #!/bin/sh
 
-script_dir=$(dirname "$(realpath -s "$0")")
-root_dir="$script_dir"
-
-mkdir -p .cache/venv
-
 IMAGE_NAME="${ENVIRONMENT}-${SERVICE_NAME}"
 
 build() {
   (
     docker build --target "${IMAGE_NAME}" .
     docker tag "${IMAGE_NAME}:latest" "${DOCKER_REGISTRY}/${IMAGE_NAME}:latest"
-    docker tag "${IMAGE_NAME}:latest" "${DOCKER_REGISTRY}/${IMAGE_NAME}:${CUSTOM_TAG}"
+    docker tag "${IMAGE_NAME}:latest" "${DOCKER_REGISTRY}/${IMAGE_NAME}:${GITHUB_SHA}"
+    docker push "${DOCKER_REGISTRY}/${IMAGE_NAME}" --all-tags
   )
 }
 

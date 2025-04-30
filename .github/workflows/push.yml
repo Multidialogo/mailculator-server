@@ -13,7 +13,7 @@ permissions:
   contents: read  # This is required for actions/checkout
 
 env:
-  SERVICE_NAME: mailculator-server
+  SERVICE_NAME: multicarrier-email-api
 
 jobs:
   build:
@@ -31,12 +31,19 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Step 2: Build the package
-#      - name: Build
-#        run: chmod +x ./build-ci.sh && ./build-ci.sh
+      # Step 2: Configure AWS credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.OIDC_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
 
-      # Step 3: Build the package
+      # Step 3: Login to ECR registry
+      - name: Login ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Step 4: Build & push image
       - name: Build
-        run: env
-#        run: chmod +x ./build-ci.sh && ./build-ci.sh
+        run: chmod +x ./build-ci.sh && ./build-ci.sh
 
