@@ -6,7 +6,9 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+
 	"multicarrier-email-api/internal/email"
+	"multicarrier-email-api/internal/healthcheck"
 )
 
 type App struct {
@@ -34,10 +36,13 @@ func NewApp(cp configProvider) *App {
 }
 
 func (a *App) NewServer(port int) *http.Server {
-	createEmail := email.NewCreateEmailHandler(a.attachmentsBasePath, a.emailService)
-
 	mux := http.NewServeMux()
+
+	createEmail := email.NewCreateEmailHandler(a.attachmentsBasePath, a.emailService)
 	mux.Handle("POST /emails", createEmail)
+
+	health := new(healthcheck.Handler)
+	mux.Handle("GET /health-check", health)
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
