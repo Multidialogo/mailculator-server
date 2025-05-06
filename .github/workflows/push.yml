@@ -44,8 +44,41 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       # Step 4: Build & push image
-      - name: Build
+      - name: Image build
+        id: build-image
         env:
-          DOCKER_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        run: chmod +x ./build-ci.sh && ./build-ci.sh
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_NAME: ${{ env.ENVIRONMENT }}-${{ env.SERVICE_NAME }}
+        run: |
+          docker build -t "$IMAGE_NAME:latest" -f Dockerfile .
+          docker tag $IMAGE_NAME:latest $ECR_REGISTRY/$IMAGE_NAME:latest
+          docker tag $IMAGE_NAME:latest $ECR_REGISTRY/$IMAGE_NAME:$GITHUB_SHA
+          docker push $ECR_REGISTRY/$IMAGE_NAME --all-tags
+          echo "image=$ECR_REGISTRY/$IMAGE_NAME:$GITHUB_SHA" >> $GITHUB_OUTPUT
+      #        run: chmod +x ./build-ci.sh && ./build-ci.sh
+
+      # Step 5: Retrieve task definition json
+      - name: Retrieve Task Definition json
+        env:
+          FAMILY: ${{ env.ENVIRONMENT }}-${{ env.SERVICE_NAME }}
+        run: |
+          aws ecs describe-task-definition --task-definition $FAMILY --query taskDefinition > task-definition.json
+
+      # Step 6: Update task definition image
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-definition
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ env.SERVICE_NAME }}
+          image: ${{ steps.build-image.outputs.image }}
+
+      # Step 6: Deploy
+      - name: Deploy
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-definition.outputs.task-definition }}
+          service: ${{ env.SERVICE_NAME }}
+          cluster: ${{ env.ENVIRONMENT }}
+          wait-for-service-stability: true
 
