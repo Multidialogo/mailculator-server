@@ -1,7 +1,3 @@
-aws:
-  key: dummy-key
-  region: "dummy-region-with-quotation-marks"
-
 attachments:
   base-path: "/efs/attachments"
 

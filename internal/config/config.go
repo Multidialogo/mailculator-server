@@ -15,7 +15,6 @@ import (
 
 type AwsConfig struct {
 	BaseEndpoint string `yaml:"base-endpoint"`
-	Region       string `yaml:"region" validate:"required"`
 	sdkConfig    aws.Config
 }
 
@@ -32,7 +31,7 @@ type ServerConfig struct {
 }
 
 type Config struct {
-	Aws         AwsConfig         `yaml:"aws,flow" validate:"required"`
+	Aws         AwsConfig         `yaml:"aws,flow"`
 	Attachments AttachmentsConfig `yaml:"attachments,flow" validate:"required"`
 	EmlStorage  EmlStorageConfig  `yaml:"eml-storage,flow" validate:"required"`
 	Server      ServerConfig      `yaml:"server,flow" validate:"required"`
@@ -55,7 +54,6 @@ func (c *Config) Load(r io.Reader) error {
 	decoder.KnownFields(true)
 
 	decodeErr := decoder.Decode(c)
-
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	err := validate.Struct(c)
 
@@ -65,8 +63,11 @@ func (c *Config) Load(r io.Reader) error {
 	if decodeErr != nil {
 		return decodeErr
 	}
+	if err != nil {
+		return err
+	}
 
-	awsConfig, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(c.Aws.Region))
+	awsConfig, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
 		return err
 	}

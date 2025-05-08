@@ -1,5 +1,4 @@
 aws:
-  region: "dummy-region-with-quotation-marks"
   base-endpoint: "${TEST_ENV_VAR}"
 
 attachments:
