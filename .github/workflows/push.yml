@@ -55,7 +55,6 @@ jobs:
           docker tag $IMAGE_NAME:latest $ECR_REGISTRY/$IMAGE_NAME:$GITHUB_SHA
           docker push $ECR_REGISTRY/$IMAGE_NAME --all-tags
           echo "image=$ECR_REGISTRY/$IMAGE_NAME:$GITHUB_SHA" >> $GITHUB_OUTPUT
-      #        run: chmod +x ./build-ci.sh && ./build-ci.sh
 
       # Step 5: Retrieve task definition json
       - name: Retrieve Task Definition json
