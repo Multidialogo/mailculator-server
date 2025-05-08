@@ -9,8 +9,8 @@ import (
 	"multicarrier-email-api/internal/config"
 )
 
-//go:embed config/app.yaml
-var configYamlContent string
+//go:embed config/config.yaml
+var configYamlContent []byte
 
 func newAppServer() *http.Server {
 	cfg, err := config.NewFromYamlContent(configYamlContent)

@@ -9,13 +9,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func getYamlContent(fileName string) (string, error) {
+func getYamlContent(fileName string) ([]byte, error) {
 	yamlContentBytes, err := os.ReadFile(fileName)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return string(yamlContentBytes), nil
+	return yamlContentBytes, nil
 }
 
 func TestNewFromYamlContent(t *testing.T) {
