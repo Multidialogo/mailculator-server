@@ -30,7 +30,7 @@ func TestNewFromYamlContent(t *testing.T) {
 	cases := []caseStruct{
 		{"Valid", "testdata/valid.yaml", false},
 		{"Invalid unknown field", "testdata/invalid-unknown-field.yaml", true},
-		{"Invalid missing host", "testdata/invalid-missing-fields.yaml", true},
+		{"Invalid missing fields", "testdata/invalid-missing-fields.yaml", true},
 	}
 
 	for _, c := range cases {

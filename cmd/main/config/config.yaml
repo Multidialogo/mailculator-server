@@ -1,5 +1,4 @@
 aws:
-  region: "${AWS_REGION}"
   base-endpoint: "${AWS_BASE_ENDPOINT}"
 
 attachments:
