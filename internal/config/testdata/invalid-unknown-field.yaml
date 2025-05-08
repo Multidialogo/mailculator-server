@@ -1,5 +1,4 @@
 aws:
-  key: dummy-key
   region: "dummy-region-with-quotation-marks"
   base-endpoint: dummy-base-endpoint
 
