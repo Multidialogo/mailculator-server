@@ -1,10 +1,8 @@
 aws:
   key: dummy-key
-  secret: dummy-secret
   region: "dummy-region-with-quotation-marks"
 
 attachments:
   base-path: "/efs/attachments"
 
 eml-storage:
-  path: "/efs/eml"
