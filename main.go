@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"log"
 	"net/http"
 
@@ -8,10 +9,11 @@ import (
 	"multicarrier-email-api/internal/config"
 )
 
-const configFilePath = "config/app.yaml"
+//go:embed config/app.yaml
+var configYamlContent string
 
 func newAppServer() *http.Server {
-	cfg, err := config.NewFromYaml(configFilePath)
+	cfg, err := config.NewFromYamlContent(configYamlContent)
 	if err != nil {
 		log.Panicf("error loading config: %v", err)
 		return nil
