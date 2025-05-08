@@ -1,9 +1,7 @@
 aws:
   key: dummy-key
-  secret: dummy-secret
   region: "dummy-region-with-quotation-marks"
   base-endpoint: dummy-base-endpoint
-  sus: "hello"
 
 attachments:
   base-path: "/efs/attachments"
