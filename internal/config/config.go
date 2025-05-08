@@ -38,15 +38,10 @@ type Config struct {
 	Server      ServerConfig      `yaml:"server,flow" validate:"required"`
 }
 
-func NewFromYaml(filePath string) (*Config, error) {
+func NewFromYamlContent(yamlContent string) (*Config, error) {
 	config := &Config{}
 
-	yamlData, err := os.ReadFile(filePath)
-	if err != nil {
-		return nil, err
-	}
-
-	yamlString := os.ExpandEnv(string(yamlData))
+	yamlString := os.ExpandEnv(yamlContent)
 	reader := strings.NewReader(yamlString)
 
 	if err := config.Load(reader); err != nil {
