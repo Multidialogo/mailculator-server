@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
+
 	"multicarrier-email-api/internal/email/testutils"
 )
 
@@ -41,7 +42,7 @@ func TestOutboxComponentWorkflow(t *testing.T) {
 
 	awsConfig := testutils.NewAwsTestConfigFromEnv()
 	dynamo := dynamodb.NewFromConfig(awsConfig)
-	sut := New(dynamo)
+	sut := NewDatabase(dynamo, "Outbox")
 
 	fixtures = map[string]string{}
 	defer deleteFixtures(t, dynamo)

@@ -12,17 +12,20 @@ import (
 )
 
 const (
-	tableName     = "Outbox"
 	statusMeta    = "_META"
 	statusInitial = "READY"
 )
 
 type Database struct {
-	dynamo *dynamodb.Client
+	dynamo    *dynamodb.Client
+	tableName string
 }
 
-func New(dynamo *dynamodb.Client) *Database {
-	return &Database{dynamo: dynamo}
+func NewDatabase(dynamo *dynamodb.Client, tableName string) *Database {
+	return &Database{
+		dynamo:    dynamo,
+		tableName: tableName,
+	}
 }
 
 func (db *Database) getMetaAttributes(status string, emlFilePath string, createdAt string) map[string]interface{} {
@@ -34,11 +37,11 @@ func (db *Database) getMetaAttributes(status string, emlFilePath string, created
 }
 
 func (db *Database) Insert(ctx context.Context, id string, emlFilePath string) error {
-	metaStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?, 'Attributes': ?}", tableName)
+	metaStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?, 'Attributes': ?}", db.tableName)
 	metaAttrs := db.getMetaAttributes(statusInitial, emlFilePath, time.Now().Format(time.RFC3339))
 	metaParams, _ := attributevalue.MarshalList([]interface{}{id, statusMeta, metaAttrs})
 
-	inStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?}", tableName)
+	inStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?}", db.tableName)
 	inParams, _ := attributevalue.MarshalList([]interface{}{id, statusInitial, map[string]interface{}{}})
 
 	ti := &dynamodb.ExecuteTransactionInput{
@@ -53,10 +56,10 @@ func (db *Database) Insert(ctx context.Context, id string, emlFilePath string) e
 }
 
 func (db *Database) DeletePending(ctx context.Context, id string) error {
-	metaStmt := fmt.Sprintf("DELETE FROM \"%v\" WHERE Id=? AND Status=?", tableName)
+	metaStmt := fmt.Sprintf("DELETE FROM \"%v\" WHERE Id=? AND Status=?", db.tableName)
 	metaParams, _ := attributevalue.MarshalList([]interface{}{id, statusMeta})
 
-	inStmt := fmt.Sprintf("DELETE FROM \"%v\" WHERE Id=? AND Status=?", tableName)
+	inStmt := fmt.Sprintf("DELETE FROM \"%v\" WHERE Id=? AND Status=?", db.tableName)
 	inParams, _ := attributevalue.MarshalList([]interface{}{id, statusInitial})
 
 	ti := &dynamodb.ExecuteTransactionInput{
