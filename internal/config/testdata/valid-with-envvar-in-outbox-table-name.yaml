@@ -1,11 +1,14 @@
 aws:
-  base-endpoint: "${TEST_ENV_VAR}"
+  base-endpoint: "endpoint.local"
 
 attachments:
   base-path: "/efs/attachments"
 
 eml-storage:
   path: "/efs/eml"
+
+outbox:
+  table-name: "${TEST_ENV_VAR}"
 
 server:
   port: 8080

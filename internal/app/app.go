@@ -20,12 +20,13 @@ type configProvider interface {
 	GetAwsConfig() aws.Config
 	GetAttachmentsBasePath() string
 	GetEmlStoragePath() string
+	GetOutboxTableName() string
 }
 
 func NewApp(cp configProvider) *App {
 	emlStorage := email.NewEMLStorage(cp.GetEmlStoragePath())
 	dynamo := dynamodb.NewFromConfig(cp.GetAwsConfig())
-	db := email.New(dynamo)
+	db := email.NewDatabase(dynamo, cp.GetOutboxTableName())
 
 	emailService := email.NewService(emlStorage, db)
 
