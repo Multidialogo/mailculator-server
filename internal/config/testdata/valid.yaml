@@ -4,5 +4,8 @@ attachments:
 eml-storage:
   path: "/efs/eml"
 
+outbox:
+  table-name: "Outbox"
+
 server:
   port: 8080
