@@ -86,7 +86,7 @@ jobs:
       - name: Update the task definition ssm parameter
         run: |
           aws ssm put-parameter \
-          --name "/${{ env.ENVIRONMENT }}/ecs/task-definitions/${{ env.SERVICE_NAME }}/name" \
+          --name "/${{ env.ENVIRONMENT }}/ecs/task-definitions/${{ env.SERVICE_NAME }}/arn" \
           --value ${{ steps.task-definition-deploy.outputs.task-definition-arn }} \
           --type String \
           --overwrite
