@@ -75,6 +75,7 @@ jobs:
       # Step 7: Update task definition ssm parameter
       - name: Update the task definition ssm parameter
         run: |
+          cat ${{ steps.task-definition.outputs.task-definition }}
           aws ssm put-parameter \
           --name "/${{ env.ENVIRONMENT }}/ecs/task-definitions/${{ env.SERVICE_NAME }}/name" \
           --value ${{ steps.task-definition.outputs.task-definition }} \
