@@ -72,12 +72,22 @@ jobs:
           container-name: ${{ env.SERVICE_NAME }}
           image: ${{ steps.build-image.outputs.image }}
 
+      # Step 7: Update task definition ssm parameter
+      - name: Update the task definition ssm parameter
+        run: |
+          aws ssm put-parameter \
+          --name "/${{ env.ENVIRONMENT }}/ecs/task-definitions/${{ env.SERVICE_NAME }}/name" \
+          --value ${{ steps.task-definition.outputs.task-definition }} \
+          --type String \
+          --overwrite
+          
+
       # Step 6: Deploy
-      - name: Deploy
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.task-definition.outputs.task-definition }}
-          service: ${{ env.SERVICE_NAME }}
-          cluster: ${{ env.ENVIRONMENT }}
-          wait-for-service-stability: true
+#      - name: Deploy
+#        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+#        with:
+#          task-definition: ${{ steps.task-definition.outputs.task-definition }}
+#          service: ${{ env.SERVICE_NAME }}
+#          cluster: ${{ env.ENVIRONMENT }}
+#          wait-for-service-stability: true
 
