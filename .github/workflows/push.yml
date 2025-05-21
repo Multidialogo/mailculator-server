@@ -23,9 +23,14 @@ jobs:
         run: |
           if [ "${{ github.ref }}" == "refs/heads/master" ]; then
             echo "ENVIRONMENT=prod" >> $GITHUB_ENV
+            echo "SERVICE_CPU=${{ env.PROD_SERVICE_CPU }}" >> $GITHUB_ENV
+            echo "SERVICE_MEMORY=${{ env.PROD_SERVICE_MEMORY }}" >> $GITHUB_ENV
           elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
             echo "ENVIRONMENT=stage" >> $GITHUB_ENV
+            echo "SERVICE_CPU=${{ env.STAGE_SERVICE_CPU }}" >> $GITHUB_ENV
+            echo "SERVICE_MEMORY=${{ env.STAGE_SERVICE_MEMORY }}" >> $GITHUB_ENV
           fi
+          cat $GITHUB_ENV
 
       # Step 1: Checkout the repository
       - name: Checkout Code
