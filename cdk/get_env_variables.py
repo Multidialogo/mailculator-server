@@ -5,7 +5,7 @@ def check_variable(variable, env_variable_name: str):
         raise Exception(f'{env_variable_name} variable must be set.')
 
 ENVIRONMENT_VARIABLES = [
-    'REGION',
+    'AWS_REGION',
     'ACCOUNT_ID',
     'SERVICE_NAME',
     # 'CLUSTER_NAME',
