@@ -142,12 +142,12 @@ class TaskDefinitionStack(Stack):
 
         md_rest_efs_id = ssm.StringParameter.value_from_lookup(
             scope=self,
-            parameter_name=f'/{selected_environment}/ecs/file-systems/multidialogo-rest/id',
+            parameter_name=f'/{selected_environment}/efs/file-systems/multidialogo-rest/id',
         )
 
         md_rest_access_point_id = ssm.StringParameter.value_from_lookup(
             scope=self,
-            parameter_name=f'/{selected_environment}/ecs/access-points/{MULTICARRIER_EMAIL_ID}-multidialogo-rest/id',
+            parameter_name=f'/{selected_environment}/efs/access-points/{MULTICARRIER_EMAIL_ID}-multidialogo-rest/id',
         )
 
         task_definition.add_volume(
