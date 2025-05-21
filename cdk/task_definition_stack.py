@@ -184,15 +184,16 @@ class TaskDefinitionStack(Stack):
             retention=logs.RetentionDays.ONE_MONTH
         )
 
-        repository_arn = ssm.StringParameter.value_from_lookup(
+        repository_name = ssm.StringParameter.value_from_lookup(
             scope=self,
-            parameter_name=f'/{selected_environment}/ecr/repositories/{MULTICARRIER_EMAIL_ID}-api/arn',
+            parameter_name=f'/{selected_environment}/ecr/repositories/{MULTICARRIER_EMAIL_ID}-api/name',
         )
 
         repository = ecr.Repository.from_repository_name(
             scope=self,
             id='ecr-repository',
-            repository_name=f'{selected_environment}-{service_name}',
+            repository_name=repository_name,
+            # repository_name=f'{selected_environment}-{service_name}',
         )
 
         container = task_definition.add_container(
@@ -237,15 +238,21 @@ class TaskDefinitionStack(Stack):
             )
         )
 
-        table_arn = ssm.StringParameter.value_from_lookup(
+        # table_arn = ssm.StringParameter.value_from_lookup(
+        #     scope=self,
+        #     parameter_name=f'/{selected_environment}/dynamodb/tables/{MULTICARRIER_EMAIL_ID}-outbox/arn',
+        # )
+
+        table_name = ssm.StringParameter.value_from_lookup(
             scope=self,
-            parameter_name=f'/{selected_environment}/dynamodb/tables/{MULTICARRIER_EMAIL_ID}-outbox/arn',
+            parameter_name=f'/{selected_environment}/dynamodb/tables/{MULTICARRIER_EMAIL_ID}-outbox/name',
         )
 
-        table = dynamodb.Table.from_table_arn(
+        table = dynamodb.Table.from_table_name(
             scope=self,
             id='table',
-            table_arn=table_arn,
+            table_name=table_name,
+            # table_name=f'{selected_environment}-{MULTICARRIER_EMAIL_ID}-outbox',
         )
 
         table.grant_read_write_data(
