@@ -92,9 +92,9 @@ class TaskDefinitionStack(Stack):
         task_definition = ecs.FargateTaskDefinition(
             scope=self,
             id=f'{service_name}-task-definition',
-            cpu=service_cpu,
+            cpu=int(service_cpu),
             family=f'{selected_environment}-{service_name}',
-            memory_limit_mib=service_memory,
+            memory_limit_mib=int(service_memory)
         )
 
         task_definition.apply_removal_policy(
