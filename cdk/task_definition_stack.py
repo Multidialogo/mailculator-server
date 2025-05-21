@@ -189,9 +189,15 @@ class TaskDefinitionStack(Stack):
             parameter_name=f'/{selected_environment}/ecr/repositories/{MULTICARRIER_EMAIL_ID}-api/arn',
         )
 
-        repository = ecr.Repository.from_lookup(
+        # repository = ecr.Repository.from_lookup(
+        #     scope=self,
+        #     id='repository',
+        #     repository_arn=repository_arn
+        # )
+
+        repository = ecr.Repository.from_repository_arn(
             scope=self,
-            id='repository',
+            id='ecr-repository',
             repository_arn=repository_arn
         )
 
