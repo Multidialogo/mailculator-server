@@ -14,6 +14,11 @@ permissions:
 
 env:
   SERVICE_NAME: multicarrier-email-api
+  ACCOUNT_ID: ${{ vars.ACCOUNT_ID }}
+  MC_EMAIL_EFS_FOLDER_NAME: ${{ vars.MC_EMAIL_EFS_FOLDER_NAME }}
+  MD_REST_EFS_FOLDER_NAME: ${{ vars.MD_REST_EFS_FOLDER_NAME }}
+  SERVICE_CONTAINER_PORT: ${{ vars.SERVICE_CONTAINER_PORT }}
+  SERVICE_HOST_PORT: ${{ vars.SERVICE_HOST_PORT }}
 
 jobs:
   build:
@@ -23,12 +28,12 @@ jobs:
         run: |
           if [ "${{ github.ref }}" == "refs/heads/master" ]; then
             echo "ENVIRONMENT=prod" >> $GITHUB_ENV
-            echo "SERVICE_CPU=${{ env.PROD_SERVICE_CPU }}" >> $GITHUB_ENV
-            echo "SERVICE_MEMORY=${{ env.PROD_SERVICE_MEMORY }}" >> $GITHUB_ENV
+            echo "SERVICE_CPU=${{ vars.PROD_SERVICE_CPU }}" >> $GITHUB_ENV
+            echo "SERVICE_MEMORY=${{ vars.PROD_SERVICE_MEMORY }}" >> $GITHUB_ENV
           elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
             echo "ENVIRONMENT=stage" >> $GITHUB_ENV
-            echo "SERVICE_CPU=${{ env.STAGE_SERVICE_CPU }}" >> $GITHUB_ENV
-            echo "SERVICE_MEMORY=${{ env.STAGE_SERVICE_MEMORY }}" >> $GITHUB_ENV
+            echo "SERVICE_CPU=${{ vars.STAGE_SERVICE_CPU }}" >> $GITHUB_ENV
+            echo "SERVICE_MEMORY=${{ vars.STAGE_SERVICE_MEMORY }}" >> $GITHUB_ENV
           fi
           cat $GITHUB_ENV
 
