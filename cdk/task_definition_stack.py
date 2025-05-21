@@ -219,8 +219,8 @@ class TaskDefinitionStack(Stack):
 
         container.add_port_mappings(
             ecs.PortMapping(
-                container_port=service_container_port,
-                host_port=service_host_port
+                container_port=int(service_container_port),
+                host_port=int(service_host_port)
             )
         )
 
