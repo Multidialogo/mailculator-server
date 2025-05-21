@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from aws_cdk import App, Environment
 
-from cdk.get_env_variables import GetEnvVariables
-from cdk.task_definition_stack import TaskDefinitionStack
+from get_env_variables import GetEnvVariables
+from task_definition_stack import TaskDefinitionStack
 
 if __name__ == "__main__":
     app = App()
