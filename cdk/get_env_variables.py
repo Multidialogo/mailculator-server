@@ -1,9 +1,5 @@
 import os
 
-def check_variable(variable, env_variable_name: str):
-    if not variable:
-        raise Exception(f'{env_variable_name} variable must be set.')
-
 ENVIRONMENT_VARIABLES = [
     'AWS_REGION',
     'ACCOUNT_ID',
@@ -42,5 +38,4 @@ class GetEnvVariables:
                 self.env_dict[i] = 'latest'
                 continue
 
-            check_variable(os.environ[i], i)
             self.env_dict[i] = os.environ[i]
