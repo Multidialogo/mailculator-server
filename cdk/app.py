@@ -19,3 +19,5 @@ if __name__ == "__main__":
         env_parameters=env_parameters,
         env=environment
     )
+
+    app.synth()
