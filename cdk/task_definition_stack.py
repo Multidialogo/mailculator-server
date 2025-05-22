@@ -140,6 +140,30 @@ class TaskDefinitionStack(Stack):
             )
         )
 
+        repository_name = ssm.StringParameter.value_from_lookup(
+            scope=self,
+            parameter_name=f'/{selected_environment}/ecr/repositories/{MULTICARRIER_EMAIL_ID}-api/name',
+        )
+
+        repository = ecr.Repository.from_repository_name(
+            scope=self,
+            id='ecr-repository',
+            repository_name=repository_name,
+        )
+
+        task_definition.add_to_execution_role_policy(
+            statement=iam.PolicyStatement(
+                actions=[
+                    'ecr:BatchCheckLayerAvailability',
+                    'ecr:BatchGetImage',
+                    'ecr:GetDownloadUrlForLayer'
+                ],
+                resources=[
+                    repository.repository_arn
+                ]
+            )
+        )
+
         md_rest_efs_id = ssm.StringParameter.value_from_lookup(
             scope=self,
             parameter_name=f'/{selected_environment}/efs/file-systems/multidialogo-rest/id',
@@ -182,18 +206,6 @@ class TaskDefinitionStack(Stack):
             log_group_name=f'{selected_environment}/{MULTICARRIER_EMAIL_ID}/{service_name}2',
             removal_policy=log_group_retainment,
             retention=logs.RetentionDays.ONE_MONTH
-        )
-
-        repository_name = ssm.StringParameter.value_from_lookup(
-            scope=self,
-            parameter_name=f'/{selected_environment}/ecr/repositories/{MULTICARRIER_EMAIL_ID}-api/name',
-        )
-
-        repository = ecr.Repository.from_repository_name(
-            scope=self,
-            id='ecr-repository',
-            repository_name=repository_name,
-            # repository_name=f'{selected_environment}-{service_name}',
         )
 
         container = task_definition.add_container(
