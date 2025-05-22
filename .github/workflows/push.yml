@@ -7,6 +7,7 @@ on:
   merge_group:
     branches:
       - develop
+      - feature/cdk-integration
 
 permissions:
   id-token: write # This is required for requesting the JWT
@@ -31,6 +32,10 @@ jobs:
             echo "SERVICE_CPU=${{ vars.PROD_SERVICE_CPU }}" >> $GITHUB_ENV
             echo "SERVICE_MEMORY=${{ vars.PROD_SERVICE_MEMORY }}" >> $GITHUB_ENV
           elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
+            echo "ENVIRONMENT=stage" >> $GITHUB_ENV
+            echo "SERVICE_CPU=${{ vars.STAGE_SERVICE_CPU }}" >> $GITHUB_ENV
+            echo "SERVICE_MEMORY=${{ vars.STAGE_SERVICE_MEMORY }}" >> $GITHUB_ENV
+          elif [ "${{ github.ref }}" == "refs/heads/feature/cdk-integration" ]; then
             echo "ENVIRONMENT=stage" >> $GITHUB_ENV
             echo "SERVICE_CPU=${{ vars.STAGE_SERVICE_CPU }}" >> $GITHUB_ENV
             echo "SERVICE_MEMORY=${{ vars.STAGE_SERVICE_MEMORY }}" >> $GITHUB_ENV
@@ -83,23 +88,23 @@ jobs:
           container-name: ${{ env.SERVICE_NAME }}
           image: ${{ steps.build-image.outputs.image }}
 
-#      - name: Deploy CDK Stack
-#        uses: arnaskro/aws-cdk-v2-github-actions@v2.3.0
-#        with:
-#          cdk_subcommand: 'deploy'
-#          cdk_args: '-c environment=${{ env.ENVIRONMENT }} --require-approval never'
-#          actions_comment: false
-#          working_dir: cdk
+      - name: Deploy CDK Stack
+        uses: arnaskro/aws-cdk-v2-github-actions@v2.3.0
+        with:
+          cdk_subcommand: 'deploy'
+          cdk_args: '-c environment=${{ env.ENVIRONMENT }} --require-approval never'
+          actions_comment: false
+          working_dir: cdk
 
       # Step 7: Deploy
-      - name: Deploy
-        id: task-definition-deploy
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.task-definition.outputs.task-definition }}
-          service: ${{ env.SERVICE_NAME }}
-          cluster: ${{ env.ENVIRONMENT }}
-          wait-for-service-stability: true
+#      - name: Deploy
+#        id: task-definition-deploy
+#        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+#        with:
+#          task-definition: ${{ steps.task-definition.outputs.task-definition }}
+#          service: ${{ env.SERVICE_NAME }}
+#          cluster: ${{ env.ENVIRONMENT }}
+#          wait-for-service-stability: true
 
       # Step 8: Update task definition ssm parameter
 #      - name: Update the task definition ssm parameter
