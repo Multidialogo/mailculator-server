@@ -2,19 +2,11 @@ from aws_cdk import (
     aws_ecs as ecs,
     aws_logs as logs,
     aws_iam as iam,
-    aws_ec2 as ec2,
-    aws_efs as efs,
     aws_dynamodb as dynamodb,
     aws_ssm as ssm,
-    aws_elasticloadbalancingv2 as elbv2,
-    aws_route53 as route53,
-    aws_route53_targets as route53_targets,
     aws_ecr as ecr,
-    aws_applicationautoscaling as applicationautoscaling,
     Stack,
-    RemovalPolicy,
-    Duration,
-    TimeZone
+    RemovalPolicy
 )
 from constructs import Construct
 
@@ -39,50 +31,13 @@ class TaskDefinitionStack(Stack):
 
         service_name = env_parameters['SERVICE_NAME']
         selected_environment = env_parameters['SELECTED_ENVIRONMENT']
-        # md_rest_efs_id = env_parameters['MD_REST_EFS_ID']
         md_rest_efs_folder_name = env_parameters['MD_REST_EFS_FOLDER_NAME']
-        # md_rest_efs_security_group_id = env_parameters['MD_REST_EFS_SECURITY_GROUP_ID']
         mc_email_efs_folder_name = env_parameters['MC_EMAIL_EFS_FOLDER_NAME']
         image_tag = env_parameters['IMAGE_TAG']
-        # vpc_id = env_parameters['VPC_ID']
-        # cluster_name = env_parameters['CLUSTER_NAME']
-        # md_domain = env_parameters['MD_DOMAIN']
-        # alb_rule_priority = env_parameters['ALB_RULE_PRIORITY']
         service_cpu = env_parameters['SERVICE_CPU']
         service_memory = env_parameters['SERVICE_MEMORY']
-        # service_desired_count = env_parameters['SERVICE_DESIRED_COUNT']
-        # service_max_count = env_parameters['SERVICE_MAX_COUNT']
         service_container_port = env_parameters['SERVICE_CONTAINER_PORT']
         service_host_port = env_parameters['SERVICE_HOST_PORT']
-
-
-        # cfn_efs_access_point = efs.CfnAccessPoint(
-        #     scope=self,
-        #     id='cfn-efs-access-point',
-        #     file_system_id=md_rest_efs_id,
-        #     posix_user=efs.CfnAccessPoint.PosixUserProperty(
-        #         gid='993',
-        #         uid='995'
-        #     ),
-        #     root_directory=efs.CfnAccessPoint.RootDirectoryProperty(
-        #         path=md_rest_efs_folder_name
-        #     ),
-        #     access_point_tags=[
-        #         efs.CfnAccessPoint.AccessPointTagProperty(
-        #             key='Name',
-        #             value=f'{selected_environment}-{MULTICARRIER_EMAIL_ID}'
-        #         ),
-        #         efs.CfnAccessPoint.AccessPointTagProperty(
-        #             key='Environment',
-        #             value=selected_environment
-        #         )
-        #     ]
-        # )
-
-        # cfn_efs_access_point.AccessPointTagProperty(
-        #     key='Name',
-        #     value=f'{selected_environment}-{MULTICARRIER_EMAIL_ID}-rest'
-        # )
 
         md_rest_access_point_arn = ssm.StringParameter.value_from_lookup(
             scope=self,
@@ -164,6 +119,28 @@ class TaskDefinitionStack(Stack):
             )
         )
 
+        log_group_retainment = RemovalPolicy.RETAIN if selected_environment == 'prod' else RemovalPolicy.DESTROY
+
+        log_group = logs.LogGroup(
+            scope=self,
+            id=f'{service_name}-log-group',
+            log_group_name=f'{selected_environment}/{MULTICARRIER_EMAIL_ID}/{service_name}',
+            removal_policy=log_group_retainment,
+            retention=logs.RetentionDays.ONE_MONTH
+        )
+
+        task_definition.add_to_execution_role_policy(
+            statement=iam.PolicyStatement(
+                actions=[
+                    'logs:CreateLogStream',
+                    'logs:PutLogEvents'
+                ],
+                resources=[
+                    log_group.log_group_arn
+                ]
+            )
+        )
+
         md_rest_efs_id = ssm.StringParameter.value_from_lookup(
             scope=self,
             parameter_name=f'/{selected_environment}/efs/file-systems/multidialogo-rest/id',
@@ -196,16 +173,6 @@ class TaskDefinitionStack(Stack):
                     iam='ENABLED'
                 )
             )
-        )
-
-        log_group_retainment = RemovalPolicy.RETAIN if selected_environment == 'prod' else RemovalPolicy.DESTROY
-
-        log_group = logs.LogGroup(
-            scope=self,
-            id=f'{service_name}-log-group',
-            log_group_name=f'{selected_environment}/{MULTICARRIER_EMAIL_ID}/{service_name}',
-            removal_policy=log_group_retainment,
-            retention=logs.RetentionDays.ONE_MONTH
         )
 
         container = task_definition.add_container(
@@ -250,11 +217,6 @@ class TaskDefinitionStack(Stack):
             )
         )
 
-        # table_arn = ssm.StringParameter.value_from_lookup(
-        #     scope=self,
-        #     parameter_name=f'/{selected_environment}/dynamodb/tables/{MULTICARRIER_EMAIL_ID}-outbox/arn',
-        # )
-
         table_name = ssm.StringParameter.value_from_lookup(
             scope=self,
             parameter_name=f'/{selected_environment}/dynamodb/tables/{MULTICARRIER_EMAIL_ID}-outbox/name',
@@ -263,8 +225,7 @@ class TaskDefinitionStack(Stack):
         table = dynamodb.Table.from_table_name(
             scope=self,
             id='table',
-            table_name=table_name,
-            # table_name=f'{selected_environment}-{MULTICARRIER_EMAIL_ID}-outbox',
+            table_name=table_name
         )
 
         table.grant_read_write_data(
@@ -283,19 +244,6 @@ class TaskDefinitionStack(Stack):
             name='EMAIL_OUTBOX_TABLE',
             value=table.table_name
         )
-
-        # vpc = ec2.Vpc.from_lookup(
-        #     scope=self,
-        #     id='vpc',
-        #     vpc_id=vpc_id
-        # )
-
-        # cluster = ecs.Cluster.from_cluster_attributes(
-        #     scope=self,
-        #     id='cluster',
-        #     cluster_name=cluster_name,
-        #     vpc=vpc
-        # )
 
         # security_group = ec2.SecurityGroup(
         #     scope=self,
