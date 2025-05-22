@@ -142,7 +142,7 @@ class TaskDefinitionStack(Stack):
 
         repository_name = ssm.StringParameter.value_from_lookup(
             scope=self,
-            parameter_name=f'/{selected_environment}/ecr/repositories/{MULTICARRIER_EMAIL_ID}-api/name',
+            parameter_name=f'/{selected_environment}/ecr/repositories/{MULTICARRIER_EMAIL_ID}-daemon/name',
         )
 
         repository = ecr.Repository.from_repository_name(
