@@ -86,7 +86,7 @@ class TaskDefinitionStack(Stack):
 
         md_rest_access_point_arn = ssm.StringParameter.value_from_lookup(
             scope=self,
-            parameter_name=f'/{selected_environment}/ecs/access-points/{MULTICARRIER_EMAIL_ID}-multidialogo-rest/arn',
+            parameter_name=f'/{selected_environment}/efs/access-points/{MULTICARRIER_EMAIL_ID}-multidialogo-rest/arn',
         )
 
         task_definition = ecs.FargateTaskDefinition(
