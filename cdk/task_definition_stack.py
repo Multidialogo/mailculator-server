@@ -69,17 +69,17 @@ class TaskDefinitionStack(Stack):
 
         mc_email_access_point_arn = ssm.StringParameter.value_from_lookup(
             scope=self,
-            parameter_name=f'/{selected_environment}/efs/access-points/multicarrier-email/arn',
+            parameter_name=f'/{selected_environment}/efs/access-points/{MULTICARRIER_EMAIL_ID}/arn',
         )
 
         mc_email_access_point_id = ssm.StringParameter.value_from_lookup(
             scope=self,
-            parameter_name=f'/{selected_environment}/efs/access-points/multicarrier-email/id',
+            parameter_name=f'/{selected_environment}/efs/access-points/{MULTICARRIER_EMAIL_ID}/id',
         )
 
         mc_email_efs_id = ssm.StringParameter.value_from_lookup(
             scope=self,
-            parameter_name=f'/{selected_environment}/efs/file-systems/multicarrier-email/id',
+            parameter_name=f'/{selected_environment}/efs/file-systems/{MULTICARRIER_EMAIL_ID}/id',
         )
 
         task_definition.add_to_execution_role_policy(
@@ -97,7 +97,7 @@ class TaskDefinitionStack(Stack):
 
         repository_name = ssm.StringParameter.value_from_lookup(
             scope=self,
-            parameter_name=f'/{selected_environment}/ecr/repositories/{MULTICARRIER_EMAIL_ID}-daemon/name',
+            parameter_name=f'/{selected_environment}/ecr/repositories/{service_name}/name',
         )
 
         repository = ecr.Repository.from_repository_name(
@@ -244,207 +244,3 @@ class TaskDefinitionStack(Stack):
             name='EMAIL_OUTBOX_TABLE',
             value=table.table_name
         )
-
-        # security_group = ec2.SecurityGroup(
-        #     scope=self,
-        #     id=f'{service_name}-security-group',
-        #     vpc=vpc
-        # )
-        #
-        # md_efs_security_group = ec2.SecurityGroup.from_lookup_by_id(
-        #     scope=self,
-        #     id='md-efs-security-group',
-        #     security_group_id=md_rest_efs_security_group_id
-        # )
-
-        # mc_email_efs_security_group_id = ssm.StringParameter.value_from_lookup(
-        #         scope=self,
-        #         parameter_name=f'/{selected_environment}/ec2/file-systems/{MULTICARRIER_EMAIL_ID}/security-group-id'
-        # )
-
-        # mc_email_efs_security_group = ec2.SecurityGroup.from_lookup_by_id(
-        #     scope=self,
-        #     id='mc-efs-security-group',
-        #     security_group_id=mc_email_efs_security_group_id
-        # )
-
-        # mc_email_efs_security_group.add_ingress_rule(
-        #     peer=ec2.Peer.security_group_id(
-        #         security_group_id=security_group.security_group_id,
-        #     ),
-        #     connection=ec2.Port.NFS
-        # )
-
-        # md_efs_security_group.add_ingress_rule(
-        #     peer=ec2.Peer.security_group_id(
-        #         security_group_id=security_group.security_group_id,
-        #     ),
-        #     connection=ec2.Port.NFS
-        # )
-
-        # listener_arn = ssm.StringParameter.value_from_lookup(
-        #         scope=self,
-        #         parameter_name=f'/{selected_environment}/ec2/load_balancers/internal-alb/listeners/http/arn'
-        # )
-
-        # alb_security_group_id = ssm.StringParameter.value_from_lookup(
-        #         scope=self,
-        #         parameter_name=f'/{selected_environment}/ec2/load_balancers/internal-alb/security-group-id'
-        # )
-
-        # alb_security_group = ec2.SecurityGroup.from_lookup_by_id(
-        #     scope=self,
-        #     id='internal-alb-security-group',
-        #     security_group_id=alb_security_group_id
-        # )
-
-        # alb_security_group.add_egress_rule(
-        #     peer=ec2.Peer.security_group_id(
-        #         security_group_id=security_group.security_group_id,
-        #     ),
-        #     connection=ec2.Port.HTTP
-        # )
-
-        # security_group.add_ingress_rule(
-        #     peer=ec2.Peer.security_group_id(
-        #         security_group_id=alb_security_group.security_group_id,
-        #     ),
-        #     connection=ec2.Port.HTTP
-        # )
-
-        # service = ecs.FargateService(
-        #     scope=self,
-        #     id=f'{service_name}-service',
-        #     assign_public_ip=False,
-        #     cluster=cluster,
-        #     desired_count=service_desired_count,
-        #     enable_ecs_managed_tags=True,
-        #     enable_execute_command=True,
-        #     security_groups=[
-        #         security_group
-        #     ],
-        #     service_name=service_name,
-        #     task_definition=task_definition,
-        #     min_healthy_percent=100,
-        #     vpc_subnets=ec2.SubnetSelection(
-        #         subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
-        #         one_per_az=True
-        #     )
-        # )
-        #
-        # target_group = elbv2.ApplicationTargetGroup(
-        #     scope=self,
-        #     id=f'{service_name}-target-group',
-        #     port=80,
-        #     protocol=elbv2.ApplicationProtocol.HTTP,
-        #     vpc=vpc,
-        #     targets=[
-        #         service
-        #     ],
-        #     target_type=elbv2.TargetType.IP,
-        #     health_check=elbv2.HealthCheck(
-        #         enabled=True,
-        #         path='/health-check',
-        #         port=str(service_host_port),
-        #     ),
-        #     deregistration_delay=Duration.seconds(30)
-        # )
-        #
-        # alb_http_listener = elbv2.ApplicationListener.from_application_listener_attributes(
-        #     scope=self,
-        #     id='internal-alb-http-listener',
-        #     listener_arn=listener_arn,
-        #     security_group=alb_security_group,
-        #     default_port=80
-        # )
-        #
-        # hosted_zone = route53.PrivateHostedZone(
-        #     scope=self,
-        #     id='hosted-zone',
-        #     vpc=vpc,
-        #     zone_name=f'{MULTICARRIER_EMAIL_ID}.{selected_environment}.{md_domain}'
-        # )
-        #
-        # internal_alb_arn = ssm.StringParameter.value_from_lookup(
-        #     scope=self,
-        #     parameter_name=f'/{selected_environment}/ec2/load_balancers/internal-alb/arn'
-        # )
-        #
-        # alb = elbv2.ApplicationLoadBalancer.from_lookup(
-        #     scope=self,
-        #     id='internal-alb',
-        #     load_balancer_arn=internal_alb_arn
-        # )
-        #
-        # a_record = route53.ARecord(
-        #     scope=self,
-        #     id='dns-record',
-        #     zone=hosted_zone,
-        #     record_name='',
-        #     target=route53.RecordTarget.from_alias(
-        #         route53_targets.LoadBalancerTarget(
-        #             alb
-        #         )
-        #     )
-        # )
-        #
-        # alb_http_listener.add_target_groups(
-        #     id=f'{service_name}-target-group-attachment',
-        #     target_groups=[
-        #         target_group
-        #     ],
-        #     conditions=[
-        #         elbv2.ListenerCondition.path_patterns(
-        #             [
-        #                 '/emails'
-        #             ]
-        #         ),
-        #         elbv2.ListenerCondition.host_headers(
-        #             [
-        #                 a_record.domain_name
-        #             ]
-        #         )
-        #     ],
-        #     priority=alb_rule_priority
-        # )
-        #
-        # multicarrier_email_daemon_scalable_target = service.auto_scale_task_count(
-        #     min_capacity=0,
-        #     max_capacity=service_max_count
-        # )
-        #
-        # multicarrier_email_daemon_scalable_target.scale_on_cpu_utilization(
-        #     id='cpu-scaling',
-        #     target_utilization_percent=70,
-        #     scale_in_cooldown=Duration.seconds(60),
-        #     scale_out_cooldown=Duration.seconds(60)
-        # )
-        #
-        # multicarrier_email_daemon_scalable_target.scale_on_memory_utilization(
-        #     id='memory-scaling',
-        #     target_utilization_percent=75,
-        #     scale_in_cooldown=Duration.seconds(60),
-        #     scale_out_cooldown=Duration.seconds(60)
-        # )
-        #
-        # multicarrier_email_daemon_scalable_target.scale_on_schedule(
-        #     id='scale-up-8am',
-        #     schedule=applicationautoscaling.Schedule.cron(
-        #         minute='0',
-        #         hour='8'
-        #     ),
-        #     min_capacity=service_desired_count,
-        #     max_capacity=service_max_count,
-        #     time_zone=TimeZone.EUROPE_ROME
-        # )
-        #
-        # multicarrier_email_daemon_scalable_target.scale_on_schedule(
-        #     id='scale-down-at-20',
-        #     schedule=applicationautoscaling.Schedule.cron(
-        #         minute='0',
-        #         hour='20'
-        #     ),
-        #     min_capacity=0,
-        #     max_capacity=0,
-        #     time_zone=TimeZone.EUROPE_ROME
-        # )
