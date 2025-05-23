@@ -39,9 +39,18 @@ class TaskDefinitionStack(Stack):
         service_container_port = env_parameters['SERVICE_CONTAINER_PORT']
         service_host_port = env_parameters['SERVICE_HOST_PORT']
 
+        outbox_table_name_parameter_name = env_parameters['OUTBOX_TABLE_NAME_PARAMETER_NAME']
+        md_rest_access_point_arn_parameter_name = env_parameters['MD_REST_ACCESS_POINT_ARN_PARAMETER_NAME']
+        mc_eml_efs_access_point_arn_parameter_name = env_parameters['MC_EML_EFS_ACCESS_POINT_ARN_PARAMETER_NAME']
+        mc_eml_efs_access_point_id_parameter_name = env_parameters['MC_EML_EFS_ACCESS_POINT_ID_PARAMETER_NAME']
+        mc_eml_efs_id_parameter_name = env_parameters['MC_EML_EFS_ID_PARAMETER_NAME']
+        repository_name_parameter_name = env_parameters['REPOSITORY_NAME_PARAMETER_NAME']
+        md_rest_efs_id_parameter_name = env_parameters['MD_REST_EFS_ID_PARAMETER_NAME']
+        md_rest_access_point_id_parameter_name = env_parameters['MD_REST_ACCESS_POINT_ID_PARAMETER_NAME']
+
         md_rest_access_point_arn = ssm.StringParameter.value_from_lookup(
             scope=self,
-            parameter_name=f'/{selected_environment}/efs/access-points/{MULTICARRIER_EMAIL_ID}-multidialogo-rest/arn',
+            parameter_name=md_rest_access_point_arn_parameter_name
         )
 
         task_definition = ecs.FargateTaskDefinition(
@@ -67,19 +76,19 @@ class TaskDefinitionStack(Stack):
             )
         )
 
-        mc_email_access_point_arn = ssm.StringParameter.value_from_lookup(
+        mc_eml_access_point_arn = ssm.StringParameter.value_from_lookup(
             scope=self,
-            parameter_name=f'/{selected_environment}/efs/access-points/{MULTICARRIER_EMAIL_ID}-eml/arn',
+            parameter_name=mc_eml_efs_access_point_arn_parameter_name,
         )
 
-        mc_email_access_point_id = ssm.StringParameter.value_from_lookup(
+        mc_eml_access_point_id = ssm.StringParameter.value_from_lookup(
             scope=self,
-            parameter_name=f'/{selected_environment}/efs/access-points/{MULTICARRIER_EMAIL_ID}-eml/id',
+            parameter_name=mc_eml_efs_access_point_id_parameter_name,
         )
 
         mc_email_efs_id = ssm.StringParameter.value_from_lookup(
             scope=self,
-            parameter_name=f'/{selected_environment}/efs/file-systems/{MULTICARRIER_EMAIL_ID}-eml/id',
+            parameter_name=mc_eml_efs_id_parameter_name,
         )
 
         task_definition.add_to_execution_role_policy(
@@ -90,14 +99,14 @@ class TaskDefinitionStack(Stack):
                     'elasticfilesystem:ClientRootAccess'
                 ],
                 resources=[
-                    mc_email_access_point_arn
+                    mc_eml_access_point_arn
                 ]
             )
         )
 
         repository_name = ssm.StringParameter.value_from_lookup(
             scope=self,
-            parameter_name=f'/{selected_environment}/ecr/repositories/{service_name}/name',
+            parameter_name=repository_name_parameter_name,
         )
 
         repository = ecr.Repository.from_repository_name(
@@ -143,12 +152,12 @@ class TaskDefinitionStack(Stack):
 
         md_rest_efs_id = ssm.StringParameter.value_from_lookup(
             scope=self,
-            parameter_name=f'/{selected_environment}/efs/file-systems/multidialogo-rest/id',
+            parameter_name=md_rest_efs_id_parameter_name,
         )
 
         md_rest_access_point_id = ssm.StringParameter.value_from_lookup(
             scope=self,
-            parameter_name=f'/{selected_environment}/efs/access-points/{MULTICARRIER_EMAIL_ID}-multidialogo-rest/id',
+            parameter_name=md_rest_access_point_id_parameter_name,
         )
 
         task_definition.add_volume(
@@ -169,7 +178,7 @@ class TaskDefinitionStack(Stack):
                 file_system_id=mc_email_efs_id,
                 transit_encryption='ENABLED',
                 authorization_config=ecs.AuthorizationConfig(
-                    access_point_id=mc_email_access_point_id,
+                    access_point_id=mc_eml_access_point_id,
                     iam='ENABLED'
                 )
             )
@@ -219,7 +228,7 @@ class TaskDefinitionStack(Stack):
 
         table_name = ssm.StringParameter.value_from_lookup(
             scope=self,
-            parameter_name=f'/{selected_environment}/dynamodb/tables/{MULTICARRIER_EMAIL_ID}-outbox/name',
+            parameter_name=outbox_table_name_parameter_name,
         )
 
         table = dynamodb.Table.from_table_name(
