@@ -48,6 +48,7 @@ class TaskDefinitionStack(Stack):
         repository_name_parameter_name = env_parameters['REPOSITORY_NAME_PARAMETER_NAME']
         md_rest_efs_id_parameter_name = env_parameters['MD_REST_EFS_ID_PARAMETER_NAME']
         md_rest_access_point_id_parameter_name = env_parameters['MD_REST_ACCESS_POINT_ID_PARAMETER_NAME']
+        tmp_task_definition_arn_parameter_name = env_parameters['TMP_TASK_DEFINITION_ARN_PARAMETER_NAME']
 
         md_rest_access_point_arn = ssm.StringParameter.value_from_lookup(
             scope=self,
@@ -253,4 +254,10 @@ class TaskDefinitionStack(Stack):
         container.add_environment(
             name='EMAIL_OUTBOX_TABLE',
             value=table.table_name
+        )
+
+        ssm.StringParameter(
+            scope=self,
+            id='temporary-task-definition-arn',
+            parameter_name=tmp_task_definition_arn_parameter_name
         )
