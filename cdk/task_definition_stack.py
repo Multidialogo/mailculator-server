@@ -69,17 +69,17 @@ class TaskDefinitionStack(Stack):
 
         mc_email_access_point_arn = ssm.StringParameter.value_from_lookup(
             scope=self,
-            parameter_name=f'/{selected_environment}/efs/access-points/{MULTICARRIER_EMAIL_ID}/arn',
+            parameter_name=f'/{selected_environment}/efs/access-points/{MULTICARRIER_EMAIL_ID}-eml/arn',
         )
 
         mc_email_access_point_id = ssm.StringParameter.value_from_lookup(
             scope=self,
-            parameter_name=f'/{selected_environment}/efs/access-points/{MULTICARRIER_EMAIL_ID}/id',
+            parameter_name=f'/{selected_environment}/efs/access-points/{MULTICARRIER_EMAIL_ID}-eml/id',
         )
 
         mc_email_efs_id = ssm.StringParameter.value_from_lookup(
             scope=self,
-            parameter_name=f'/{selected_environment}/efs/file-systems/{MULTICARRIER_EMAIL_ID}/id',
+            parameter_name=f'/{selected_environment}/efs/file-systems/{MULTICARRIER_EMAIL_ID}-eml/id',
         )
 
         task_definition.add_to_execution_role_policy(
