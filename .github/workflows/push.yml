@@ -116,15 +116,6 @@ jobs:
           aws ecs describe-task-definition \
           --task-definition $TASK_DEFINITION_ARN \
           --query taskDefinition > task-definition.json
-          echo $(cat task-definition.json | jq 'del(
-                  .taskDefinitionArn,
-                  .requiresAttributes,
-                  .compatibilities,
-                  .revision,
-                  .status,
-                  .registeredAt,
-                  .registeredBy
-              )') > task-definition.json
 
       # Step 8: Deploy the task definition
       - name: Render updated temporary task definition
@@ -141,7 +132,7 @@ jobs:
         id: task-definition-deploy
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
-          task-definition: task-definition.json
+          task-definition: ${{ steps.rendered-task-definition.outputs.task-definition }}
           service: ${{ env.SERVICE_NAME }}
           cluster: ${{ env.ENVIRONMENT }}
           wait-for-service-stability: true
