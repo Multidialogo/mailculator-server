@@ -108,7 +108,7 @@ jobs:
           echo "task-definition-arn=$TMP_TASK_DEFINITION_ARN" >> $GITHUB_OUTPUT
 
       # Step 7: Get updated temporary task definition json
-      - name: Get task definition json
+      - name: Get task definition json and clean unwanted fields
         continue-on-error: false
         env:
           TASK_DEFINITION_ARN: ${{ steps.get-updated-tmp-task-definition.outputs.task-definition-arn }}
@@ -116,6 +116,15 @@ jobs:
           aws ecs describe-task-definition \
           --task-definition $TASK_DEFINITION_ARN \
           --query taskDefinition > task-definition.json
+          echo $(cat task-definition.json | jq 'del(
+                  .taskDefinitionArn,
+                  .requiresAttributes,
+                  .compatibilities,
+                  .revision,
+                  .status,
+                  .registeredAt,
+                  .registeredBy
+              )') > task-definition.json
 
       # Step 8: Deploy the task definition
       - name: Render updated temporary task definition
