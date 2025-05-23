@@ -259,5 +259,6 @@ class TaskDefinitionStack(Stack):
         ssm.StringParameter(
             scope=self,
             id='temporary-task-definition-arn',
+            string_value=task_definition.task_definition_arn,
             parameter_name=tmp_task_definition_arn_parameter_name
         )
