@@ -40,6 +40,7 @@ jobs:
             echo "MD_REST_ACCESS_POINT_ID_PARAMETER_NAME=${{ vars.PROD_MD_REST_ACCESS_POINT_ID_PARAMETER_NAME }}" >> $GITHUB_ENV
             echo "MD_REST_ACCESS_POINT_ARN_PARAMETER_NAME=${{ vars.PROD_MD_REST_ACCESS_POINT_ARN_PARAMETER_NAME }}" >> $GITHUB_ENV
             echo "TASK_DEFINITION_ARN_PARAMETER_NAME=${{ vars.PROD_TASK_DEFINITION_ARN_PARAMETER_NAME }}" >> $GITHUB_ENV
+            echo "TMP_TASK_DEFINITION_ARN_PARAMETER_NAME=${{ vars.PROD_TMP_TASK_DEFINITION_ARN_PARAMETER_NAME }}" >> $GITHUB_ENV
           elif [ "${{ github.ref }}" == "refs/heads/feature/cdk-integration" ]; then
             echo "ENVIRONMENT=stage" >> $GITHUB_ENV
             echo "SERVICE_CPU=${{ vars.STAGE_SERVICE_CPU }}" >> $GITHUB_ENV
@@ -53,6 +54,7 @@ jobs:
             echo "MD_REST_ACCESS_POINT_ID_PARAMETER_NAME=${{ vars.STAGE_MD_REST_ACCESS_POINT_ID_PARAMETER_NAME }}" >> $GITHUB_ENV
             echo "MD_REST_ACCESS_POINT_ARN_PARAMETER_NAME=${{ vars.STAGE_MD_REST_ACCESS_POINT_ARN_PARAMETER_NAME }}" >> $GITHUB_ENV
             echo "TASK_DEFINITION_ARN_PARAMETER_NAME=${{ vars.STAGE_TASK_DEFINITION_ARN_PARAMETER_NAME }}" >> $GITHUB_ENV
+            echo "TMP_TASK_DEFINITION_ARN_PARAMETER_NAME=${{ vars.STAGE_TMP_TASK_DEFINITION_ARN_PARAMETER_NAME }}" >> $GITHUB_ENV
           fi
           cat $GITHUB_ENV
 
@@ -86,18 +88,18 @@ jobs:
           echo "image=$ECR_REGISTRY/$IMAGE_NAME:$GITHUB_SHA" >> $GITHUB_OUTPUT
           echo "IMAGE_TAG=$GITHUB_SHA" >> $GITHUB_ENV
 
-      - name: Retrieve last functioning task definition arn
-        id: retrieve-task-definition-arn
-        run: |
-          TASK_DEFINITION_ARN=$(aws ssm get-parameter --name ${{ env.TASK_DEFINITION_ARN_PARAMETER_NAME }} --query Parameter.Value --output text)
-          echo "task-definition-arn=$TASK_DEFINITION_ARN" >> $GITHUB_OUTPUT
-
-      # Step 5: Retrieve task definition json
-      - name: Retrieve Task Definition json
-        env:
-          FAMILY: ${{ env.ENVIRONMENT }}-${{ env.SERVICE_NAME }}
-        run: |
-          aws ecs describe-task-definition --task-definition ${{ steps.retrieve-task-definition-arn.outputs.task-definition-arn }} --query taskDefinition > task-definition.json
+#      - name: Retrieve last functioning task definition arn
+#        id: retrieve-task-definition-arn
+#        run: |
+#          TASK_DEFINITION_ARN=$(aws ssm get-parameter --name ${{ env.TASK_DEFINITION_ARN_PARAMETER_NAME }} --query Parameter.Value --output text)
+#          echo "task-definition-arn=$TASK_DEFINITION_ARN" >> $GITHUB_OUTPUT
+#
+#      # Step 5: Retrieve task definition json
+#      - name: Retrieve Task Definition json
+#        env:
+#          FAMILY: ${{ env.ENVIRONMENT }}-${{ env.SERVICE_NAME }}
+#        run: |
+#          aws ecs describe-task-definition --task-definition ${{ steps.retrieve-task-definition-arn.outputs.task-definition-arn }} --query taskDefinition > task-definition.json
 
       # Step 6: Update task definition image
       - name: Fill in the new image ID in the Amazon ECS task definition
@@ -116,21 +118,28 @@ jobs:
           actions_comment: false
           working_dir: cdk
 
+      - name: Retrieve updated task definition
+        id: tmp-task-definition
+        run: |
+          TMP_TASK_DEFINITION_ARN=$(aws ssm get-parameter --name ${{ env.TMP_TASK_DEFINITION_ARN_PARAMETER_NAME }} --query Parameter.Value --output text)
+          echo "tmp-task-definition-arn=$TASK_DEFINITION_ARN" >> $GITHUB_OUTPUT
+
       # Step 7: Deploy
       - name: Deploy
         id: task-definition-deploy
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
-          task-definition: ${{ steps.task-definition.outputs.task-definition }}
+          task-definition: ${{ steps.tmp-task-definition.outputs.tmp-task-definition-arn }}
           service: ${{ env.SERVICE_NAME }}
           cluster: ${{ env.ENVIRONMENT }}
           wait-for-service-stability: true
 
       # Step 8: Update task definition ssm parameter
       - name: Update the task definition ssm parameter
+        continue-on-error: false
         run: |
           aws ssm put-parameter \
-          --name "/${{ env.ENVIRONMENT }}/ecs/task-definitions/${{ env.SERVICE_NAME }}/arn" \
+          --name ${{ env.TASK_DEFINITION_ARN_PARAMETER_NAME }} \
           --value ${{ steps.task-definition-deploy.outputs.task-definition-arn }} \
           --type String \
           --overwrite
