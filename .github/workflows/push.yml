@@ -95,11 +95,11 @@ jobs:
 #          echo "task-definition-arn=$TASK_DEFINITION_ARN" >> $GITHUB_OUTPUT
 #
 #      # Step 5: Retrieve task definition json
-#      - name: Retrieve Task Definition json
-#        env:
-#          FAMILY: ${{ env.ENVIRONMENT }}-${{ env.SERVICE_NAME }}
-#        run: |
-#          aws ecs describe-task-definition --task-definition ${{ steps.retrieve-task-definition-arn.outputs.task-definition-arn }} --query taskDefinition > task-definition.json
+      - name: Retrieve Task Definition json
+        env:
+          FAMILY: ${{ env.ENVIRONMENT }}-${{ env.SERVICE_NAME }}
+        run: |
+          aws ecs describe-task-definition --task-definition ${{ steps.retrieve-task-definition-arn.outputs.task-definition-arn }} --query taskDefinition > task-definition.json
 
       # Step 6: Update task definition image
       - name: Fill in the new image ID in the Amazon ECS task definition
