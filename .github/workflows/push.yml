@@ -88,21 +88,7 @@ jobs:
           echo "image=$ECR_REGISTRY/$IMAGE_NAME:$GITHUB_SHA" >> $GITHUB_OUTPUT
           echo "IMAGE_TAG=$GITHUB_SHA" >> $GITHUB_ENV
 
-      - name: Retrieve last functioning task definition arn
-        id: retrieve-task-definition-arn
-        run: |
-          TASK_DEFINITION_ARN=$(aws ssm get-parameter --name ${{ env.TASK_DEFINITION_ARN_PARAMETER_NAME }} --query Parameter.Value --output text)
-          echo "task-definition-arn=$TASK_DEFINITION_ARN" >> $GITHUB_OUTPUT
-
-      # Step 6: Update task definition image
-#      - name: Fill in the new image ID in the Amazon ECS task definition
-#        id: task-definition
-#        uses: aws-actions/amazon-ecs-render-task-definition@v1
-#        with:
-#          task-definition: task-definition.json
-#          container-name: ${{ env.SERVICE_NAME }}
-#          image: ${{ steps.build-image.outputs.image }}
-
+      # Step 5: Deploy updated task definition stack
       - name: Deploy CDK Stack
         uses: arnaskro/aws-cdk-v2-github-actions@v2.3.0
         with:
@@ -111,12 +97,14 @@ jobs:
           actions_comment: false
           working_dir: cdk
 
+      # Step 6: Retrieve updated temporary task definition arn
       - name: Retrieve image updated task definition
         id: get-updated-tmp-task-definition
         run: |
           TMP_TASK_DEFINITION_ARN=$(aws ssm get-parameter --name ${{ env.TMP_TASK_DEFINITION_ARN_PARAMETER_NAME }} --query Parameter.Value --output text)
           echo "task-definition-arn=$TMP_TASK_DEFINITION_ARN" >> $GITHUB_OUTPUT
 
+      # Step 7: Get updated temporary task definition json
       - name: Get task definition json
         env:
           TASK_DEFINITION_ARN: ${{ steps.get-updated-tmp-task-definition.outputs.task-definition-arn }}
@@ -125,7 +113,14 @@ jobs:
           --task-definition $TASK_DEFINITION_ARN \
           --query taskDefinition > task-definition.json
 
-      # Deploy the task definition
+      # Step 8: Deploy the task definition
+      - name: Render updated temporary task definition
+        id: rendered-task-definition
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          container-name: ${{ env.SERVICE_NAME }}
+          image: ${{ steps.build-image.outputs.image }}
+
       - name: Deploy
         id: task-definition-deploy
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
@@ -135,9 +130,9 @@ jobs:
           cluster: ${{ env.ENVIRONMENT }}
           wait-for-service-stability: true
 
-      # Step 8: Update task definition ssm parameter
+      # Step 9: Update task definition ssm parameter
       - name: Update the task definition ssm parameter
-        continue-on-error: false
+        if: success()
         run: |
           aws ssm put-parameter \
           --name ${{ env.TASK_DEFINITION_ARN_PARAMETER_NAME }} \
