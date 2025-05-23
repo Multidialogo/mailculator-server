@@ -76,6 +76,7 @@ jobs:
 
       # Step 4: Build & push image
       - name: Image build
+        continue-on-error: false
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -90,6 +91,7 @@ jobs:
 
       # Step 5: Deploy updated task definition stack
       - name: Deploy CDK Stack
+        continue-on-error: false
         uses: arnaskro/aws-cdk-v2-github-actions@v2.3.0
         with:
           cdk_subcommand: 'deploy'
@@ -99,6 +101,7 @@ jobs:
 
       # Step 6: Retrieve updated temporary task definition arn
       - name: Retrieve image updated task definition
+        continue-on-error: false
         id: get-updated-tmp-task-definition
         run: |
           TMP_TASK_DEFINITION_ARN=$(aws ssm get-parameter --name ${{ env.TMP_TASK_DEFINITION_ARN_PARAMETER_NAME }} --query Parameter.Value --output text)
@@ -106,6 +109,7 @@ jobs:
 
       # Step 7: Get updated temporary task definition json
       - name: Get task definition json
+        continue-on-error: false
         env:
           TASK_DEFINITION_ARN: ${{ steps.get-updated-tmp-task-definition.outputs.task-definition-arn }}
         run: |
@@ -115,6 +119,7 @@ jobs:
 
       # Step 8: Deploy the task definition
       - name: Render updated temporary task definition
+        continue-on-error: false
         id: rendered-task-definition
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
@@ -122,7 +127,8 @@ jobs:
           container-name: ${{ env.SERVICE_NAME }}
           image: ${{ steps.build-image.outputs.image }}
 
-      - name: Deploy
+      - name: Deploy task definition
+        continue-on-error: false
         id: task-definition-deploy
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
@@ -133,7 +139,8 @@ jobs:
 
       # Step 9: Update task definition ssm parameter
       - name: Update the task definition ssm parameter
-        if: success()
+        if: ${{ steps.task-definition-deploy.outcome == 'success' }}
+        continue-on-error: false
         run: |
           aws ssm put-parameter \
           --name ${{ env.TASK_DEFINITION_ARN_PARAMETER_NAME }} \
@@ -142,7 +149,7 @@ jobs:
           --overwrite
 
       - name: Delete task definition if deploy fails
-        if: failure()
+        if: ${{ steps.task-definition-deploy.outcome == 'failure' }}
         run: |
           aws ecs deregister-task-definition \
           --task-definition ${{ steps.get-updated-tmp-task-definition.outputs.task-definition-arn }}
