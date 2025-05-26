@@ -138,6 +138,7 @@ jobs:
 #          wait-for-service-stability: true
 
       - name: Deploy task definition
+        id: task-definition-deploy
         run: |
           aws ecs update-service \
           --cluster ${{ env.ENVIRONMENT }} \
