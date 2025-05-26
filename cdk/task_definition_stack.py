@@ -51,6 +51,8 @@ class TaskDefinitionStack(Stack):
         md_rest_access_point_id_parameter_name = env_parameters['MD_REST_ACCESS_POINT_ID_PARAMETER_NAME']
         tmp_task_definition_arn_parameter_name = env_parameters['TMP_TASK_DEFINITION_ARN_PARAMETER_NAME']
 
+        task_definition_family = f'{selected_environment}-{service_name}'
+
         md_rest_access_point_arn = ssm.StringParameter.value_from_lookup(
             scope=self,
             parameter_name=md_rest_access_point_arn_parameter_name
@@ -60,7 +62,7 @@ class TaskDefinitionStack(Stack):
             scope=self,
             id=f'{service_name}-task-definition',
             cpu=int(service_cpu),
-            family=f'{selected_environment}-{service_name}',
+            family=task_definition_family,
             memory_limit_mib=int(service_memory)
         )
 
@@ -264,8 +266,6 @@ class TaskDefinitionStack(Stack):
             parameter_name=tmp_task_definition_arn_parameter_name
         )
 
-        # Tags.of(task_definition).add('ecs_container_name', container.container_name)
-        # Tags.of(task_definition).add('task_arn', task_definition.task_definition_arn)
-        # Tags.of(task_definition).add('task_family', task_definition.family)
-        # Tags.of(task_definition).add('image_tag', image_tag)
-        # Tags.of(task_definition).add('image_name', container.image_name)
+        Tags.of(task_definition).add('ecs_container_name', service_name)
+        Tags.of(task_definition).add('task_family', task_definition_family)
+        Tags.of(task_definition).add('image_tag', image_tag)
