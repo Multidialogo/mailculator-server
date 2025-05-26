@@ -251,19 +251,6 @@ class TaskDefinitionStack(Stack):
             'dynamodb:PartiQLDelete'
         )
 
-        print(table.table_arn)
-
-        task_definition.add_to_task_role(
-            statement=iam.PolicyStatement(
-                actions=[
-                    'dynamodb:PartiQLSelect'
-                ],
-                resources=[
-                    f'{table.table_arn}/index/*'
-                ]
-            )
-        )
-
         container.add_environment(
             name='EMAIL_OUTBOX_TABLE',
             value=table.table_name
