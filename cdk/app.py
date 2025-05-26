@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from aws_cdk import App, Environment
+from aws_cdk import App, Environment, Tags
 
 from get_env_variables import GetEnvVariables
 from task_definition_stack import TaskDefinitionStack
@@ -19,5 +19,8 @@ if __name__ == "__main__":
         env_parameters=env_parameters,
         env=environment
     )
+
+    Tags.of(app).add('env', selected_environment)
+    Tags.of(app).add('ecs_cluster_name', selected_environment)
 
     app.synth()
