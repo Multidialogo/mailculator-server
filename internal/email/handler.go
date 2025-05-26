@@ -1,9 +1,11 @@
 package email
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"path/filepath"
@@ -69,7 +71,14 @@ func (h *CreateEmailHandler) emlDataSliceFromBody(rb createEmailRequestBody) []e
 }
 
 func (h *CreateEmailHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	decoder := json.NewDecoder(r.Body)
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		response.WriteError(http.StatusBadRequest, w, fmt.Sprintf("error reading request body: %v", err))
+		return
+	}
+
+	buf := bytes.NewBuffer(body)
+	decoder := json.NewDecoder(buf)
 
 	var requestBody createEmailRequestBody
 	if err := decoder.Decode(&requestBody); err != nil {
