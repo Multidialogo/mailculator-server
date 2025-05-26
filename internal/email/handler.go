@@ -82,6 +82,7 @@ func (h *CreateEmailHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	var requestBody createEmailRequestBody
 	if err := decoder.Decode(&requestBody); err != nil {
+		slog.Error(fmt.Sprintf("bad payload: %v", string(body)))
 		response.WriteError(http.StatusBadRequest, w, fmt.Sprintf("error unmarshalling request body: %v", err))
 		return
 	}
