@@ -77,6 +77,8 @@ func (h *CreateEmailHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	slog.Info(fmt.Sprintf("received body: %v", string(body)))
+
 	buf := bytes.NewBuffer(body)
 	decoder := json.NewDecoder(buf)
 
