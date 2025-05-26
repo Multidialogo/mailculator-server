@@ -8,3 +8,6 @@
 .venv
 
 *.iml
+
+
+cdk/cdk.out
