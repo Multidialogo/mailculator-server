@@ -28,7 +28,7 @@ jobs:
     steps:
       - name: Select Environment
         run: |
-          if [ "${{ github.ref }}" == "refs/heads/master" ]; then
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
             echo "ENVIRONMENT=prod" >> $GITHUB_ENV
             echo "SERVICE_CPU=${{ vars.PROD_SERVICE_CPU }}" >> $GITHUB_ENV
             echo "SERVICE_MEMORY=${{ vars.PROD_SERVICE_MEMORY }}" >> $GITHUB_ENV
