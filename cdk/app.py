@@ -8,6 +8,7 @@ if __name__ == "__main__":
     app = App()
 
     selected_environment = app.node.try_get_context('environment')
+    image_tag = app.node.try_get_context('image_tag')
 
     env_parameters = GetEnvVariables(selected_environment).env_dict
 
@@ -17,6 +18,7 @@ if __name__ == "__main__":
         app,
         f"{env_parameters['SELECTED_ENVIRONMENT']}-multicarrier-email-api-task-definition-stack",
         env_parameters=env_parameters,
+        image_tag=image_tag,
         env=environment
     )
 
