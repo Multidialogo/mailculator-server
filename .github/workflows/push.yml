@@ -102,7 +102,7 @@ jobs:
       # Step 6: Retrieve updated temporary task definition arn
       - name: Retrieve image updated task definition
         continue-on-error: false
-        id: get-updated-tmp-task-definition
+        id: get-tmp-task-definition
         run: |
           TMP_TASK_DEFINITION_ARN=$(aws ssm get-parameter --name ${{ env.TMP_TASK_DEFINITION_ARN_PARAMETER_NAME }} --query Parameter.Value --output text)
           echo "task-definition-arn=$TMP_TASK_DEFINITION_ARN" >> $GITHUB_OUTPUT
@@ -143,7 +143,7 @@ jobs:
           aws ecs update-service \
           --cluster ${{ env.ENVIRONMENT }} \
           --service ${{ env.SERVICE_NAME }} \
-          --task-definition ${{ steps.get-updated-tmp-task-definition.outputs.task-definition-arn }}
+          --task-definition ${{ steps.get-tmp-task-definition.outputs.task-definition-arn }}
           aws ecs wait services-stable \
           --cluster ${{ env.ENVIRONMENT }} \
           --services ${{ env.SERVICE_NAME }}
@@ -155,7 +155,7 @@ jobs:
         run: |
           aws ssm put-parameter \
           --name ${{ env.TASK_DEFINITION_ARN_PARAMETER_NAME }} \
-          --value ${{ steps.get-updated-tmp-task-definition.outputs.task-definition-arn }} \
+          --value ${{ steps.get-tmp-task-definition.outputs.task-definition-arn }} \
           --type String \
           --overwrite
 
@@ -163,7 +163,7 @@ jobs:
         if: ${{ steps.task-definition-deploy.outcome == 'failure' }}
         run: |
           aws ecs deregister-task-definition \
-          --task-definition ${{ steps.get-updated-tmp-task-definition.outputs.task-definition-arn }}
+          --task-definition ${{ steps.get-tmp-task-definition.outputs.task-definition-arn }}
           
 
 
