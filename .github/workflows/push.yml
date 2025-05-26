@@ -41,7 +41,7 @@ jobs:
             echo "MD_REST_ACCESS_POINT_ARN_PARAMETER_NAME=${{ vars.PROD_MD_REST_ACCESS_POINT_ARN_PARAMETER_NAME }}" >> $GITHUB_ENV
             echo "TASK_DEFINITION_ARN_PARAMETER_NAME=${{ vars.PROD_TASK_DEFINITION_ARN_PARAMETER_NAME }}" >> $GITHUB_ENV
             echo "TMP_TASK_DEFINITION_ARN_PARAMETER_NAME=${{ vars.PROD_TMP_TASK_DEFINITION_ARN_PARAMETER_NAME }}" >> $GITHUB_ENV
-          elif [ "${{ github.ref }}" == "refs/heads/feature/develop" ]; then
+          elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
             echo "ENVIRONMENT=stage" >> $GITHUB_ENV
             echo "SERVICE_CPU=${{ vars.STAGE_SERVICE_CPU }}" >> $GITHUB_ENV
             echo "SERVICE_MEMORY=${{ vars.STAGE_SERVICE_MEMORY }}" >> $GITHUB_ENV
