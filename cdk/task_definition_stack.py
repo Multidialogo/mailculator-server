@@ -67,7 +67,7 @@ class TaskDefinitionStack(Stack):
         )
 
         task_definition.apply_removal_policy(
-            policy=RemovalPolicy.RETAIN_ON_UPDATE_OR_DELETE
+            policy=RemovalPolicy.RETAIN
         )
 
         task_definition.add_to_execution_role_policy(
