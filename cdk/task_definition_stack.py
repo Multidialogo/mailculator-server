@@ -6,7 +6,8 @@ from aws_cdk import (
     aws_ssm as ssm,
     aws_ecr as ecr,
     Stack,
-    RemovalPolicy
+    RemovalPolicy,
+    Tags
 )
 from constructs import Construct
 
@@ -262,3 +263,10 @@ class TaskDefinitionStack(Stack):
             string_value=task_definition.task_definition_arn,
             parameter_name=tmp_task_definition_arn_parameter_name
         )
+
+        Tags.of(task_definition).add('ecs_container_name', container.container_name)
+        Tags.of(task_definition).add('task_arn', task_definition.task_definition_arn)
+        Tags.of(task_definition).add('task_family', task_definition.family)
+        Tags.of(task_definition).add('task_name', container.task_definition)
+        Tags.of(task_definition).add('image_tag', image_tag)
+        Tags.of(task_definition).add('image_name', container.image_name)
