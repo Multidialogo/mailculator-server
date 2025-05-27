@@ -108,36 +108,7 @@ jobs:
           TMP_TASK_DEFINITION_ARN=$(aws ssm get-parameter --name ${{ env.TMP_TASK_DEFINITION_ARN_PARAMETER_NAME }} --query Parameter.Value --output text)
           echo "task-definition-arn=$TMP_TASK_DEFINITION_ARN" >> $GITHUB_OUTPUT
 
-      # Step 7: Get updated temporary task definition json
-#      - name: Get task definition json and clean unwanted fields
-#        continue-on-error: false
-#        env:
-#          TASK_DEFINITION_ARN: ${{ steps.get-updated-tmp-task-definition.outputs.task-definition-arn }}
-#        run: |
-#          aws ecs describe-task-definition \
-#          --task-definition $TASK_DEFINITION_ARN \
-#          --query taskDefinition > task-definition.json
-
-      # Step 8: Deploy the task definition
-#      - name: Render updated temporary task definition
-#        continue-on-error: false
-#        id: rendered-task-definition
-#        uses: aws-actions/amazon-ecs-render-task-definition@v1
-#        with:
-#          task-definition: task-definition.json
-#          container-name: ${{ env.SERVICE_NAME }}
-#          image: ${{ steps.build-image.outputs.image }}
-
-#      - name: Deploy task definition
-#        continue-on-error: false
-#        id: task-definition-deploy
-#        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-#        with:
-#          task-definition: ${{ steps.rendered-task-definition.outputs.task-definition }}
-#          service: ${{ env.SERVICE_NAME }}
-#          cluster: ${{ env.ENVIRONMENT }}
-#          wait-for-service-stability: true
-
+      # Step 7: Deploy new task definition and wait for service to be stable
       - name: Deploy task definition
         id: task-definition-deploy
         run: |
@@ -149,7 +120,7 @@ jobs:
           --cluster ${{ env.ENVIRONMENT }} \
           --services ${{ env.SERVICE_NAME }}
 
-      # Step 9: Update task definition ssm parameter
+      # Step 8a: Update task definition ssm parameter if the deployment succeeds
       - name: Update the task definition ssm parameter
         if: ${{ steps.task-definition-deploy.outcome == 'success' }}
         continue-on-error: false
@@ -160,6 +131,7 @@ jobs:
           --type String \
           --overwrite
 
+      # Step 8b: Deregister the task definition if the deployment fails
       - name: Delete task definition if deploy fails
         if: ${{ steps.task-definition-deploy.outcome == 'failure' }}
         run: |

@@ -36,7 +36,6 @@ class TaskDefinitionStack(Stack):
         selected_environment = env_parameters['SELECTED_ENVIRONMENT']
         md_rest_efs_folder_name = env_parameters['MD_REST_EFS_FOLDER_NAME']
         mc_email_efs_folder_name = env_parameters['MC_EMAIL_EFS_FOLDER_NAME']
-        # image_tag = env_parameters['IMAGE_TAG']
         service_cpu = env_parameters['SERVICE_CPU']
         service_memory = env_parameters['SERVICE_MEMORY']
         service_container_port = env_parameters['SERVICE_CONTAINER_PORT']
