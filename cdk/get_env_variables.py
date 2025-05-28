@@ -40,9 +40,23 @@ class GetEnvVariables:
         }
 
         for i in ENVIRONMENT_VARIABLES:
+
+            print(i)
+
             if i in ENVIRONMENT_INDEPENDENT_VARIABLES:
+
+                print(f'{i} in independent')
+
                 self.env_dict[i] = os.environ[i]
+
+                print(self.env_dict)
+
                 continue
 
             i_env = f'{selected_environment.upper()}_{i}'
+
+            print(f'i_env {i_env} in environment')
+
             self.env_dict[i] = os.environ[i_env]
+
+            print(self.env_dict)
