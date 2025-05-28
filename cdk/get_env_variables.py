@@ -21,6 +21,14 @@ ENVIRONMENT_VARIABLES = [
     'TMP_TASK_DEFINITION_ARN_PARAMETER_NAME'
 ]
 
+ENVIRONMENT_INDEPENDENT_VARIABLES = [
+    'AWS_REGION',
+    'ACCOUNT_ID',
+    'SERVICE_NAME',
+    'MD_REST_EFS_FOLDER_NAME',
+    'MC_EMAIL_EFS_FOLDER_NAME'
+]
+
 class GetEnvVariables:
     def __init__(
             self,
@@ -32,5 +40,9 @@ class GetEnvVariables:
         }
 
         for i in ENVIRONMENT_VARIABLES:
+            if i in ENVIRONMENT_INDEPENDENT_VARIABLES:
+                self.env_dict[i] = os.environ[i]
+                continue
+
             i_env = f'{selected_environment.upper()}_{i}'
             self.env_dict[i] = os.environ[i_env]
