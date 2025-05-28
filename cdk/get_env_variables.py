@@ -32,9 +32,5 @@ class GetEnvVariables:
         }
 
         for i in ENVIRONMENT_VARIABLES:
-
-            if i == 'IMAGE_TAG':
-                self.env_dict[i] = 'latest'
-                continue
-
-            self.env_dict[i] = os.environ[i]
+            i_env = f'{selected_environment.upper()}_{i}'
+            self.env_dict[i] = os.environ[i_env]
