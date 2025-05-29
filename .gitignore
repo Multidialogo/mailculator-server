@@ -9,8 +9,6 @@
 
 *.iml
 
-
-
 cdk/cdk.out
 
 .idea
