@@ -134,6 +134,17 @@ class TaskDefinitionStack(Stack):
             )
         )
 
+        task_definition.add_to_execution_role_policy(
+            statement=iam.PolicyStatement(
+                actions=[
+                    'secretsmanager:GetSecretValue'
+                ],
+                resources=[
+                    f'arn:aws:secretsmanager:{self.region}:{self.account}:secret:{dd_api_key_secret_name}-*'
+                ]
+            )
+        )
+
         log_group_retainment = RemovalPolicy.RETAIN if selected_environment == 'prod' else RemovalPolicy.DESTROY
 
         log_group = logs.LogGroup(
