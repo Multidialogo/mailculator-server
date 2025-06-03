@@ -254,13 +254,17 @@ class TaskDefinitionStack(Stack):
             retention=logs.RetentionDays.ONE_MONTH
         )
 
-
-
-        dd_api_key_secret = secretsmanager.from_secret_partial_arn(
+        dd_api_key_secret = secretsmanager.Secret.from_secret_name_v2(
             scope=self,
             id='dd-api-key-secret',
-            secret_partial_arn=dd_api_key_secret_partial_arn
+            secret_name=dd_api_key_secret_name,
         )
+
+        # dd_api_key_secret = secretsmanager.Secret.from_secret_partial_arn(
+        #     scope=self,
+        #     id='dd-api-key-secret',
+        #     secret_partial_arn=dd_api_key_secret_partial_arn
+        # )
 
         datadog_container = task_definition.add_container(
             id='datadog-container',
