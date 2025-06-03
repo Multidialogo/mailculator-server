@@ -8,7 +8,8 @@ from aws_cdk import (
     aws_secretsmanager as secretsmanager,
     Stack,
     RemovalPolicy,
-    Tags
+    Tags,
+    Duration
 )
 from constructs import Construct
 
@@ -135,15 +136,13 @@ class TaskDefinitionStack(Stack):
             )
         )
 
-        dd_api_key_secret_partial_arn = f'arn:aws:secretsmanager:{self.region}:{self.account}:secret:{dd_api_key_secret_name}'
-
         task_definition.add_to_execution_role_policy(
             statement=iam.PolicyStatement(
                 actions=[
                     'secretsmanager:GetSecretValue'
                 ],
                 resources=[
-                    f'{dd_api_key_secret_partial_arn}-*'
+                    f'arn:aws:secretsmanager:{self.region}:{self.account}:secret:{dd_api_key_secret_name}-*'
                 ]
             )
         )
@@ -260,12 +259,6 @@ class TaskDefinitionStack(Stack):
             secret_name=dd_api_key_secret_name,
         )
 
-        # dd_api_key_secret = secretsmanager.Secret.from_secret_partial_arn(
-        #     scope=self,
-        #     id='dd-api-key-secret',
-        #     secret_partial_arn=dd_api_key_secret_partial_arn
-        # )
-
         datadog_container = task_definition.add_container(
             id='datadog-container',
             image=ecs.ContainerImage.from_registry(
@@ -284,9 +277,9 @@ class TaskDefinitionStack(Stack):
             health_check=ecs.HealthCheck(
                 command=['CMD-SHELL', 'agent health'],
                 retries=3,
-                timeout=5,
-                interval=30,
-                start_period=15,
+                timeout=Duration.seconds(5),
+                interval=Duration.seconds(30),
+                start_period=Duration.seconds(15),
             )
         )
 
