@@ -5,6 +5,7 @@ from aws_cdk import (
     aws_dynamodb as dynamodb,
     aws_ssm as ssm,
     aws_ecr as ecr,
+    aws_secretsmanager as secretsmanager,
     Stack,
     RemovalPolicy,
     Tags
@@ -251,6 +252,12 @@ class TaskDefinitionStack(Stack):
             retention=logs.RetentionDays.ONE_MONTH
         )
 
+        dd_api_key_secret = secretsmanager.from_secret_name_v2(
+            scope=self,
+            id='dd-api-key-secret',
+            secret_name=dd_api_key_secret_name
+        )
+
         datadog_container = task_definition.add_container(
             id='datadog-container',
             image=ecs.ContainerImage.from_registry(
@@ -261,13 +268,13 @@ class TaskDefinitionStack(Stack):
                 log_group=datadog_container_log_group
             ),
             secrets={
-                'DD_API_KEY': ecs.Secret.from_secrets_manager(dd_api_key_secret_name, 'key')
+                'DD_API_KEY': ecs.Secret.from_secrets_manager(dd_api_key_secret, 'key')
             },
             cpu=256,
             memory=512,
             essential=True,
             health_check=ecs.HealthCheck(
-                command=["CMD-SHELL","agent health"],
+                command=['CMD-SHELL', 'agent health'],
                 retries=3,
                 timeout=5,
                 interval=30,
