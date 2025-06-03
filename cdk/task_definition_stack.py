@@ -272,7 +272,7 @@ class TaskDefinitionStack(Stack):
                 'DD_API_KEY': ecs.Secret.from_secrets_manager(dd_api_key_secret, 'key')
             },
             cpu=256,
-            memory=512,
+            memory_limit_mib=512,
             essential=True,
             health_check=ecs.HealthCheck(
                 command=['CMD-SHELL', 'agent health'],
