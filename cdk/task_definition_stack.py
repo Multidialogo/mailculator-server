@@ -269,7 +269,7 @@ class TaskDefinitionStack(Stack):
                 log_group=datadog_container_log_group
             ),
             secrets={
-                'DD_API_KEY': ecs.Secret.from_secrets_manager(dd_api_key_secret, 'key')
+                'DD_API_KEY': ecs.Secret.from_secrets_manager(secret=dd_api_key_secret, field='key')
             },
             cpu=256,
             memory_limit_mib=512,
