@@ -293,6 +293,11 @@ class TaskDefinitionStack(Stack):
             value='datadoghq.eu'
         )
 
+        datadog_container.add_environment(
+            name='DD_ECS_TASK_COLLECTION_ENABLED',
+            value='true'
+        )
+
         table_name = ssm.StringParameter.value_from_lookup(
             scope=self,
             parameter_name=outbox_table_name_parameter_name,
