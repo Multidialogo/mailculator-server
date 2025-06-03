@@ -135,13 +135,15 @@ class TaskDefinitionStack(Stack):
             )
         )
 
+        dd_api_key_secret_partial_arn = f'arn:aws:secretsmanager:{self.region}:{self.account}:secret:{dd_api_key_secret_name}'
+
         task_definition.add_to_execution_role_policy(
             statement=iam.PolicyStatement(
                 actions=[
                     'secretsmanager:GetSecretValue'
                 ],
                 resources=[
-                    f'arn:aws:secretsmanager:{self.region}:{self.account}:secret:{dd_api_key_secret_name}-*'
+                    f'{dd_api_key_secret_partial_arn}-*'
                 ]
             )
         )
@@ -252,10 +254,12 @@ class TaskDefinitionStack(Stack):
             retention=logs.RetentionDays.ONE_MONTH
         )
 
-        dd_api_key_secret = secretsmanager.from_secret_name_v2(
+
+
+        dd_api_key_secret = secretsmanager.from_secret_partial_arn(
             scope=self,
             id='dd-api-key-secret',
-            secret_name=dd_api_key_secret_name
+            secret_partial_arn=dd_api_key_secret_partial_arn
         )
 
         datadog_container = task_definition.add_container(
