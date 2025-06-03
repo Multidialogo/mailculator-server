@@ -288,6 +288,11 @@ class TaskDefinitionStack(Stack):
             value='true'
         )
 
+        datadog_container.add_environment(
+            name='DD_SITE',
+            value='datadoghq.eu'
+        )
+
         table_name = ssm.StringParameter.value_from_lookup(
             scope=self,
             parameter_name=outbox_table_name_parameter_name,
