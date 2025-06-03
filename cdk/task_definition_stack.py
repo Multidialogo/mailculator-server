@@ -210,7 +210,7 @@ class TaskDefinitionStack(Stack):
                 tag=image_tag
             ),
             logging=ecs.LogDriver.aws_logs(
-                stream_prefix=f'{selected_environment}/{service_name}',
+                stream_prefix='container',
                 log_group=log_group
             )
         )
@@ -245,14 +245,6 @@ class TaskDefinitionStack(Stack):
             )
         )
 
-        datadog_container_log_group = logs.LogGroup(
-            scope=self,
-            id=f'{service_name}-datadog-container-log-group',
-            log_group_name=f'/{selected_environment}/{MULTICARRIER_EMAIL_ID}/{service_name}-datadog-container',
-            removal_policy=log_group_retainment,
-            retention=logs.RetentionDays.ONE_MONTH
-        )
-
         dd_api_key_secret = secretsmanager.Secret.from_secret_name_v2(
             scope=self,
             id='dd-api-key-secret',
@@ -265,8 +257,8 @@ class TaskDefinitionStack(Stack):
                 'public.ecr.aws/datadog/agent:latest'
             ),
             logging=ecs.LogDriver.aws_logs(
-                stream_prefix=f'/{selected_environment}/{service_name}/datadog-agent',
-                log_group=datadog_container_log_group
+                stream_prefix='datadog-container',
+                log_group=log_group
             ),
             secrets={
                 'DD_API_KEY': ecs.Secret.from_secrets_manager(secret=dd_api_key_secret, field='key')
