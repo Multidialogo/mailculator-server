@@ -210,7 +210,7 @@ class TaskDefinitionStack(Stack):
                 tag=image_tag
             ),
             logging=ecs.LogDriver.aws_logs(
-                stream_prefix='container',
+                stream_prefix=service_name,
                 log_group=log_group
             )
         )
