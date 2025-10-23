@@ -28,17 +28,18 @@ func NewDatabase(dynamo *dynamodb.Client, tableName string) *Database {
 	}
 }
 
-func (db *Database) getMetaAttributes(status string, emlFilePath string, createdAt string) map[string]interface{} {
+func (db *Database) getMetaAttributes(status string, emlFilePath string, createdAt string, ttl string) map[string]interface{} {
 	return map[string]interface{}{
 		"Latest":      status,
 		"CreatedAt":   createdAt,
 		"EMLFilePath": emlFilePath,
+		"TTL":         ttl,
 	}
 }
 
 func (db *Database) Insert(ctx context.Context, id string, emlFilePath string) error {
 	metaStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?, 'Attributes': ?}", db.tableName)
-	metaAttrs := db.getMetaAttributes(statusInitial, emlFilePath, time.Now().Format(time.RFC3339))
+	metaAttrs := db.getMetaAttributes(statusInitial, emlFilePath, time.Now().Format(time.RFC3339), fmt.Sprintf("%d", time.Now().Add(30*24*time.Hour).Unix()))
 	metaParams, _ := attributevalue.MarshalList([]interface{}{id, statusMeta, metaAttrs})
 
 	inStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?}", db.tableName)
