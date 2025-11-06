@@ -222,7 +222,12 @@ class TaskDefinitionStack(Stack):
 
         container.add_environment(
             name='EML_STORAGE_PATH',
-            value=mc_email_efs_folder_name
+            value=mc_email_efs_folder_name + "/emls"
+        )
+
+        container.add_environment(
+            name='PAYLOAD_STORAGE_PATH',
+            value=mc_email_efs_folder_name + "/requests"
         )
 
         container.add_port_mappings(
