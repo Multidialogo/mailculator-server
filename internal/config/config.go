@@ -26,6 +26,10 @@ type EmlStorageConfig struct {
 	Path string `yaml:"path" validate:"required"`
 }
 
+type PayloadStorageConfig struct {
+	Path string `yaml:"path" validate:"required"`
+}
+
 type OutboxConfig struct {
 	TableName string `yaml:"table-name" validate:"required"`
 }
@@ -35,11 +39,12 @@ type ServerConfig struct {
 }
 
 type Config struct {
-	Aws         AwsConfig         `yaml:"aws,flow"`
-	Attachments AttachmentsConfig `yaml:"attachments,flow" validate:"required"`
-	EmlStorage  EmlStorageConfig  `yaml:"eml-storage,flow" validate:"required"`
-	Outbox      OutboxConfig      `yaml:"outbox,flow" validate:"required"`
-	Server      ServerConfig      `yaml:"server,flow" validate:"required"`
+	Aws            AwsConfig            `yaml:"aws,flow"`
+	Attachments    AttachmentsConfig    `yaml:"attachments,flow" validate:"required"`
+	EmlStorage     EmlStorageConfig     `yaml:"eml-storage,flow" validate:"required"`
+	PayloadStorage PayloadStorageConfig `yaml:"payload-storage,flow" validate:"required"`
+	Outbox         OutboxConfig         `yaml:"outbox,flow" validate:"required"`
+	Server         ServerConfig         `yaml:"server,flow" validate:"required"`
 }
 
 func NewFromYamlContent(yamlContent []byte) (*Config, error) {
@@ -95,6 +100,10 @@ func (c *Config) GetAttachmentsBasePath() string {
 
 func (c *Config) GetEmlStoragePath() string {
 	return c.EmlStorage.Path
+}
+
+func (c *Config) GetPayloadStoragePath() string {
+	return c.PayloadStorage.Path
 }
 
 func (c *Config) GetOutboxTableName() string {

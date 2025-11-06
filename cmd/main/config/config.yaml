@@ -7,6 +7,9 @@ attachments:
 eml-storage:
   path: "${EML_STORAGE_PATH}"
 
+payload-storage:
+  path: "${PAYLOAD_STORAGE_PATH}"
+
 outbox:
   table-name: "${EMAIL_OUTBOX_TABLE}"
 

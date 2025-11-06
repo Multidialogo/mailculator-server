@@ -7,6 +7,9 @@ attachments:
 eml-storage:
   path: "/efs/eml"
 
+payload-storage:
+  path: "/efs/payloads"
+
 outbox:
   table-name: "${TEST_ENV_VAR}"
 

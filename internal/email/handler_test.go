@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"multicarrier-email-api/internal/eml"
 )
 
 type emailServiceMock struct {
@@ -24,7 +23,7 @@ func newEmailServiceMock(withError bool) *emailServiceMock {
 	return new(emailServiceMock)
 }
 
-func (m *emailServiceMock) Save(_ context.Context, _ []eml.EML) error {
+func (m *emailServiceMock) Save(_ context.Context, _ []EmailRequest) error {
 	return m.returnErr
 }
 
@@ -52,7 +51,7 @@ func TestCreateEmailHandler_ServeHTTP(t *testing.T) {
 			withServiceError:   false,
 			payloadFilePath:    "testdata/handler_test/payloads/wrong-property-types.json",
 			expectedStatusCode: http.StatusBadRequest,
-			expectedBody:       `{"error": "error unmarshalling request body: json: cannot unmarshal number into Go struct field .data.id of type string"}`,
+			expectedBody:       `{"error": "error unmarshalling request body: json: cannot unmarshal number into Go struct field emailDataInput.data.id of type string"}`,
 		},
 		{
 			name:               "validation errors",
