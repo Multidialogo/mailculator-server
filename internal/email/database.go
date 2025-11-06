@@ -28,18 +28,19 @@ func NewDatabase(dynamo *dynamodb.Client, tableName string) *Database {
 	}
 }
 
-func (db *Database) getMetaAttributes(status string, emlFilePath string, createdAt string, ttl int64) map[string]interface{} {
+func (db *Database) getMetaAttributes(status string, emlFilePath string, payloadFilePath string, createdAt string, ttl int64) map[string]interface{} {
 	return map[string]interface{}{
-		"Latest":      status,
-		"CreatedAt":   createdAt,
-		"EMLFilePath": emlFilePath,
-		"TTL":         ttl,
+		"Latest":        status,
+		"CreatedAt":     createdAt,
+		"EMLFilePath":   emlFilePath,
+		"PayloadFilePath": payloadFilePath,
+		"TTL":           ttl,
 	}
 }
 
-func (db *Database) Insert(ctx context.Context, id string, emlFilePath string) error {
+func (db *Database) Insert(ctx context.Context, id string, emlFilePath string, payloadFilePath string) error {
 	metaStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?, 'Attributes': ?}", db.tableName)
-	metaAttrs := db.getMetaAttributes(statusInitial, emlFilePath, time.Now().Format(time.RFC3339), time.Now().Add(30*24*time.Hour).Unix())
+	metaAttrs := db.getMetaAttributes(statusInitial, emlFilePath, payloadFilePath, time.Now().Format(time.RFC3339), time.Now().Add(30*24*time.Hour).Unix())
 	metaParams, _ := attributevalue.MarshalList([]interface{}{id, statusMeta, metaAttrs})
 
 	inStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?}", db.tableName)
