@@ -14,6 +14,7 @@ coverage() {
   export AWS_REGION=eu-west-1
   export ATTACHMENTS_BASE_PATH=testdata/attachments
   export EML_STORAGE_PATH=testdata/.out/eml
+  export PAYLOAD_STORAGE_PATH=testdata/.out/requests
   export EMAIL_OUTBOX_TABLE=Outbox
 
   go mod tidy

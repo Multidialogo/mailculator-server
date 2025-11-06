@@ -2,12 +2,13 @@ package email
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
 	"multicarrier-email-api/internal/eml"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestEMLStorage_Store(t *testing.T) {
@@ -26,7 +27,7 @@ func TestEMLStorage_Store(t *testing.T) {
 		CustomHeaders: map[string]string{"X-Custom-Header": "AnotherHeaderValue"},
 	}
 
-	baseStoragePath := "testdata/storage_test/.out"
+	baseStoragePath := "testdata/eml_storage_test/.out"
 	sut := &EMLStorage{basePath: baseStoragePath}
 
 	savedFilePath, err := sut.Store(emlData)
