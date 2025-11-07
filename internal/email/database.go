@@ -135,28 +135,47 @@ func (db *Database) GetStaleEmails(ctx context.Context) ([]StaleEmail, error) {
 		return nil, fmt.Errorf("failed to marshal parameters: %w", err)
 	}
 
-	stmt := &dynamodb.ExecuteStatementInput{
-		Statement:  aws.String(query),
-		Parameters: params,
-	}
-
-	res, err := db.dynamo.ExecuteStatement(ctx, stmt)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute statement: %w", err)
-	}
-
-	var records []struct {
+	var allRecords []struct {
 		Id         string                 `dynamodbav:"Id"`
 		Status     string                 `dynamodbav:"Status"`
 		Attributes map[string]interface{} `dynamodbav:"Attributes"`
 	}
 
-	if err := attributevalue.UnmarshalListOfMaps(res.Items, &records); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal records: %w", err)
+	// Paginate through all results using NextToken
+	var nextToken *string
+	for {
+		stmt := &dynamodb.ExecuteStatementInput{
+			Statement:  aws.String(query),
+			Parameters: params,
+			NextToken:  nextToken,
+		}
+
+		res, err := db.dynamo.ExecuteStatement(ctx, stmt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to execute statement: %w", err)
+		}
+
+		var records []struct {
+			Id         string                 `dynamodbav:"Id"`
+			Status     string                 `dynamodbav:"Status"`
+			Attributes map[string]interface{} `dynamodbav:"Attributes"`
+		}
+
+		if err := attributevalue.UnmarshalListOfMaps(res.Items, &records); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal records: %w", err)
+		}
+
+		allRecords = append(allRecords, records...)
+
+		// Check if there are more results
+		if res.NextToken == nil {
+			break
+		}
+		nextToken = res.NextToken
 	}
 
-	staleEmails := make([]StaleEmail, 0, len(records))
-	for _, record := range records {
+	staleEmails := make([]StaleEmail, 0, len(allRecords))
+	for _, record := range allRecords {
 		latest, _ := record.Attributes["Latest"].(string)
 		createdAtStr, _ := record.Attributes["CreatedAt"].(string)
 		updatedAtStr, _ := record.Attributes["UpdatedAt"].(string)
