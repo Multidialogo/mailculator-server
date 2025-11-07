@@ -22,13 +22,14 @@ type configProvider interface {
 	GetEmlStoragePath() string
 	GetPayloadStoragePath() string
 	GetOutboxTableName() string
+	GetStaleEmailsThresholdMinutes() int
 }
 
 func NewApp(cp configProvider) *App {
 	emlStorage := email.NewEMLStorage(cp.GetEmlStoragePath())
 	payloadStorage := email.NewPayloadStorage(cp.GetPayloadStoragePath())
 	dynamo := dynamodb.NewFromConfig(cp.GetAwsConfig())
-	db := email.NewDatabase(dynamo, cp.GetOutboxTableName())
+	db := email.NewDatabase(dynamo, cp.GetOutboxTableName(), cp.GetStaleEmailsThresholdMinutes())
 
 	emailService := email.NewService(emlStorage, payloadStorage, db)
 
@@ -43,6 +44,12 @@ func (a *App) NewServer(port int) *http.Server {
 
 	createEmail := email.NewCreateEmailHandler(a.attachmentsBasePath, a.emailService)
 	mux.Handle("POST /emails", createEmail)
+
+	getStaleEmails := email.NewGetStaleEmailsHandler(a.emailService)
+	mux.Handle("GET /stale-emails", getStaleEmails)
+
+	requeueEmail := email.NewRequeueEmailHandler(a.emailService)
+	mux.Handle("POST /emails/{id}/requeue", requeueEmail)
 
 	health := new(healthcheck.Handler)
 	mux.Handle("GET /health-check", health)

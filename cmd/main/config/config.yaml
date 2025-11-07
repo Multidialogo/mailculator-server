@@ -12,6 +12,7 @@ payload-storage:
 
 outbox:
   table-name: "${EMAIL_OUTBOX_TABLE}"
+  stale-emails-threshold-minutes: 30
 
 server:
   port: 8080

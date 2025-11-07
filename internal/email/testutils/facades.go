@@ -3,11 +3,12 @@ package testutils
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"log"
 	"multicarrier-email-api/internal/eml"
 	"os"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -164,6 +165,45 @@ func (edf *EmailDatabaseFacade) RemoveFixtures(fixtures []EmailTestFixtureKeys) 
 		err = fmt.Errorf("%w\n%w", err, foundError)
 	}
 
+	return err
+}
+
+func (edf *EmailDatabaseFacade) InsertEmailWithStatus(ctx context.Context, id string, latestStatus string, updatedAtTime time.Time) error {
+	ttl := time.Now().Add(30 * 24 * time.Hour).Unix()
+	createdAt := time.Now().Format(time.RFC3339)
+	updatedAt := updatedAtTime.Format(time.RFC3339)
+
+	// Insert _META record
+	metaStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?, 'Attributes': ?}", testEmailTableName)
+	metaAttrs := map[string]interface{}{
+		"Latest":          latestStatus,
+		"CreatedAt":       createdAt,
+		"UpdatedAt":       updatedAt,
+		"EMLFilePath":     "/test/path/file.eml",
+		"PayloadFilePath": "/test/path/payload.json",
+		"TTL":             ttl,
+	}
+	metaParams, err := attributevalue.MarshalList([]interface{}{id, testEmailTableStatusMeta, metaAttrs})
+	if err != nil {
+		return err
+	}
+
+	// Insert status record
+	statusStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?, 'Attributes': ?}", testEmailTableName)
+	statusAttrs := map[string]interface{}{"TTL": ttl}
+	statusParams, err := attributevalue.MarshalList([]interface{}{id, latestStatus, statusAttrs})
+	if err != nil {
+		return err
+	}
+
+	ti := &dynamodb.ExecuteTransactionInput{
+		TransactStatements: []types.ParameterizedStatement{
+			{Statement: aws.String(metaStmt), Parameters: metaParams},
+			{Statement: aws.String(statusStmt), Parameters: statusParams},
+		},
+	}
+
+	_, err = edf.db.ExecuteTransaction(ctx, ti)
 	return err
 }
 
