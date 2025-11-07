@@ -85,6 +85,42 @@ paths:
           description: "Invalid HTTP method"
         '500':
           description: "Internal server error"
+  /stale-emails:
+    get:
+      summary: Get stale emails
+      description: Returns a list of all emails that are stuck in a processing state for more than the configured threshold time (default 30 minutes).
+      operationId: getStaleEmails
+      responses:
+        '200':
+          description: "List of stale emails"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StaleEmail'
+        '500':
+          description: "Internal server error"
+  /emails/{id}/requeue:
+    post:
+      summary: Requeue a stale email
+      description: Requeues an email by deleting the stuck status record and updating the _META record Latest field based on the current status. Only works for emails in INTAKING, PROCESSING, CALLING-SENT-CALLBACK, or CALLING-FAILED-CALLBACK states.
+      operationId: requeueEmail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "UUID of the email to requeue"
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: "Email successfully requeued"
+        '400':
+          description: "Invalid request (missing or invalid ID)"
+        '500':
+          description: "Internal server error (e.g., email not found, invalid status for requeue)"
 components:
   schemas:
     Email:
@@ -117,3 +153,27 @@ components:
           type: string
         callback_on_failure:
           type: string
+    StaleEmail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: "UUID of the email"
+        status:
+          type: string
+          enum: [INTAKING, PROCESSING, CALLING-SENT-CALLBACK, CALLING-FAILED-CALLBACK]
+          description: "Current processing status (mapped from Latest field)"
+        created_at:
+          type: string
+          format: date-time
+          description: "Timestamp when the email was created"
+        updated_at:
+          type: string
+          format: date-time
+          description: "Timestamp when the email was last updated"
+      required:
+        - id
+        - status
+        - created_at
+        - updated_at
