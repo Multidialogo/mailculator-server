@@ -31,7 +31,8 @@ type PayloadStorageConfig struct {
 }
 
 type OutboxConfig struct {
-	TableName string `yaml:"table-name" validate:"required"`
+	TableName                   string `yaml:"table-name" validate:"required"`
+	StaleEmailsThresholdMinutes int    `yaml:"stale-emails-threshold-minutes" validate:"required"`
 }
 
 type ServerConfig struct {
@@ -108,6 +109,10 @@ func (c *Config) GetPayloadStoragePath() string {
 
 func (c *Config) GetOutboxTableName() string {
 	return c.Outbox.TableName
+}
+
+func (c *Config) GetStaleEmailsThresholdMinutes() int {
+	return c.Outbox.StaleEmailsThresholdMinutes
 }
 
 func (c *Config) GetServerPort() int {
