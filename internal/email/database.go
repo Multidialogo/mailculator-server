@@ -13,7 +13,7 @@ import (
 
 const (
 	statusMeta    = "_META"
-	statusInitial = "READY"
+	statusInitial = "ACCEPTED"
 )
 
 type Database struct {
@@ -30,21 +30,24 @@ func NewDatabase(dynamo *dynamodb.Client, tableName string) *Database {
 
 func (db *Database) getMetaAttributes(status string, emlFilePath string, payloadFilePath string, createdAt string, ttl int64) map[string]interface{} {
 	return map[string]interface{}{
-		"Latest":        status,
-		"CreatedAt":     createdAt,
-		"EMLFilePath":   emlFilePath,
+		"Latest":          status,
+		"CreatedAt":       createdAt,
+		"EMLFilePath":     emlFilePath,
 		"PayloadFilePath": payloadFilePath,
-		"TTL":           ttl,
+		"TTL":             ttl,
 	}
 }
 
 func (db *Database) Insert(ctx context.Context, id string, emlFilePath string, payloadFilePath string) error {
+	ttl := time.Now().Add(30 * 24 * time.Hour).Unix()
+
 	metaStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?, 'Attributes': ?}", db.tableName)
-	metaAttrs := db.getMetaAttributes(statusInitial, emlFilePath, payloadFilePath, time.Now().Format(time.RFC3339), time.Now().Add(30*24*time.Hour).Unix())
+	metaAttrs := db.getMetaAttributes(statusInitial, emlFilePath, payloadFilePath, time.Now().Format(time.RFC3339), ttl)
 	metaParams, _ := attributevalue.MarshalList([]interface{}{id, statusMeta, metaAttrs})
 
-	inStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?}", db.tableName)
-	inParams, _ := attributevalue.MarshalList([]interface{}{id, statusInitial, map[string]interface{}{}})
+	inStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?, 'Attributes': ?}", db.tableName)
+	inAttrs := map[string]interface{}{"TTL": ttl}
+	inParams, _ := attributevalue.MarshalList([]interface{}{id, statusInitial, inAttrs})
 
 	ti := &dynamodb.ExecuteTransactionInput{
 		TransactStatements: []types.ParameterizedStatement{
