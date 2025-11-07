@@ -103,6 +103,36 @@ func (edf *EmailDatabaseFacade) Query(ctx context.Context, status string, limit 
 	return edf.unmarshalList(res.Items)
 }
 
+func (edf *EmailDatabaseFacade) GetRecord(ctx context.Context, id string, status string) (dynamodbRecord, error) {
+	query := fmt.Sprintf("SELECT Id, Status, Attributes FROM \"%v\" WHERE Id=? AND Status=?", testEmailTableName)
+	params, err := attributevalue.MarshalList([]interface{}{id, status})
+	if err != nil {
+		return dynamodbRecord{}, err
+	}
+
+	stmt := &dynamodb.ExecuteStatementInput{
+		Parameters: params,
+		Statement:  aws.String(query),
+	}
+
+	res, err := edf.db.ExecuteStatement(ctx, stmt)
+	if err != nil {
+		return dynamodbRecord{}, err
+	}
+
+	if len(res.Items) == 0 {
+		return dynamodbRecord{}, fmt.Errorf("record not found")
+	}
+
+	var record dynamodbRecord
+	err = attributevalue.UnmarshalMap(res.Items[0], &record)
+	if err != nil {
+		return dynamodbRecord{}, err
+	}
+
+	return record, nil
+}
+
 func (edf *EmailDatabaseFacade) RemoveFixtures(fixtures []EmailTestFixtureKeys) error {
 	if len(fixtures) == 0 {
 		log.Print("no fixtures to delete")
