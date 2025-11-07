@@ -61,6 +61,14 @@ func (m *databaseMock) DeletePending(_ context.Context, _ string) error {
 	return nil
 }
 
+func (m *databaseMock) GetStaleEmails(_ context.Context) ([]StaleEmail, error) {
+	return nil, nil
+}
+
+func (m *databaseMock) RequeueEmail(_ context.Context, _ string) error {
+	return nil
+}
+
 func TestService_Save(t *testing.T) {
 	t.Parallel()
 
