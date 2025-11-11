@@ -43,7 +43,7 @@ func TestOutboxComponentWorkflow(t *testing.T) {
 
 	awsConfig := testutils.NewAwsTestConfigFromEnv()
 	dynamo := dynamodb.NewFromConfig(awsConfig)
-	sut := NewDatabase(dynamo, "Outbox", 30)
+	sut := NewDatabase(dynamo, "Outbox", 30, 30)
 
 	fixtures = map[string]string{}
 	defer deleteFixtures(t, dynamo)
@@ -103,7 +103,7 @@ func TestReadyRecordHasTTL(t *testing.T) {
 
 	awsConfig := testutils.NewAwsTestConfigFromEnv()
 	dynamo := dynamodb.NewFromConfig(awsConfig)
-	sut := NewDatabase(dynamo, "Outbox", 30)
+	sut := NewDatabase(dynamo, "Outbox", 30, 30)
 
 	fixtures = map[string]string{}
 	defer deleteFixtures(t, dynamo)
@@ -140,7 +140,7 @@ func TestRequeueEmailForRequeuableStatuses(t *testing.T) {
 
 	awsConfig := testutils.NewAwsTestConfigFromEnv()
 	dynamo := dynamodb.NewFromConfig(awsConfig)
-	sut := NewDatabase(dynamo, "Outbox", 30)
+	sut := NewDatabase(dynamo, "Outbox", 30, 30)
 
 	fixtures = map[string]string{}
 	defer deleteFixtures(t, dynamo)
@@ -216,7 +216,7 @@ func TestRequeueEmailErrorsForNonRequeuableStatuses(t *testing.T) {
 
 	awsConfig := testutils.NewAwsTestConfigFromEnv()
 	dynamo := dynamodb.NewFromConfig(awsConfig)
-	sut := NewDatabase(dynamo, "Outbox", 30)
+	sut := NewDatabase(dynamo, "Outbox", 30, 30)
 
 	fixtures = map[string]string{}
 	defer deleteFixtures(t, dynamo)

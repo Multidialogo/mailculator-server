@@ -40,16 +40,18 @@ const (
 )
 
 type Database struct {
-	dynamo                      *dynamodb.Client
-	tableName                   string
-	staleEmailsThresholdMinutes int
+	dynamo                        *dynamodb.Client
+	tableName                     string
+	staleEmailsThresholdMinutes   int
+	invalidEmailsThresholdDays    int
 }
 
-func NewDatabase(dynamo *dynamodb.Client, tableName string, staleEmailsThresholdMinutes int) *Database {
+func NewDatabase(dynamo *dynamodb.Client, tableName string, staleEmailsThresholdMinutes int, invalidEmailsThresholdDays int) *Database {
 	return &Database{
-		dynamo:                      dynamo,
-		tableName:                   tableName,
-		staleEmailsThresholdMinutes: staleEmailsThresholdMinutes,
+		dynamo:                        dynamo,
+		tableName:                     tableName,
+		staleEmailsThresholdMinutes:   staleEmailsThresholdMinutes,
+		invalidEmailsThresholdDays:    invalidEmailsThresholdDays,
 	}
 }
 
@@ -188,14 +190,19 @@ func (db *Database) GetStaleEmails(ctx context.Context) ([]Email, error) {
 }
 
 func (db *Database) GetInvalidEmails(ctx context.Context) ([]Email, error) {
-	// Query for emails with Status = INVALID
+	thresholdTime := time.Now().Add(-time.Duration(db.invalidEmailsThresholdDays) * 24 * time.Hour)
+	thresholdStr := thresholdTime.Format(time.RFC3339)
+
+	// Query for emails with Status = INVALID and CreatedAt >= threshold
 	query := fmt.Sprintf(`SELECT Id, Status, Attributes 
 		FROM "%v" 
-		WHERE Status=?`,
+		WHERE Status=?
+		AND Attributes.CreatedAt >= ?`,
 		db.tableName)
 
 	params, err := attributevalue.MarshalList([]interface{}{
 		StatusInvalid,
+		thresholdStr,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal parameters: %w", err)
