@@ -5,9 +5,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"multicarrier-email-api/internal/email/testutils"
 	"multicarrier-email-api/internal/eml"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type emlStorageMock struct {
@@ -61,7 +62,11 @@ func (m *databaseMock) DeletePending(_ context.Context, _ string) error {
 	return nil
 }
 
-func (m *databaseMock) GetStaleEmails(_ context.Context) ([]StaleEmail, error) {
+func (m *databaseMock) GetStaleEmails(_ context.Context) ([]Email, error) {
+	return nil, nil
+}
+
+func (m *databaseMock) GetInvalidEmails(_ context.Context) ([]Email, error) {
 	return nil, nil
 }
 
@@ -73,7 +78,7 @@ func TestService_Save(t *testing.T) {
 	t.Parallel()
 
 	emlBatch := testutils.DummyEMLDataBatch(2)
-	
+
 	// Create EmailRequest batch with dummy payloads
 	emailRequests := make([]EmailRequest, len(emlBatch))
 	for i, eml := range emlBatch {
