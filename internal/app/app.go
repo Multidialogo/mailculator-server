@@ -48,6 +48,9 @@ func (a *App) NewServer(port int) *http.Server {
 	getStaleEmails := email.NewGetStaleEmailsHandler(a.emailService)
 	mux.Handle("GET /stale-emails", getStaleEmails)
 
+	getInvalidEmails := email.NewGetInvalidEmailsHandler(a.emailService)
+	mux.Handle("GET /invalid-emails", getInvalidEmails)
+
 	requeueEmail := email.NewRequeueEmailHandler(a.emailService)
 	mux.Handle("POST /emails/{id}/requeue", requeueEmail)
 
