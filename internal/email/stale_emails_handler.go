@@ -11,7 +11,7 @@ import (
 )
 
 type staleEmailsServiceInterface interface {
-	GetStaleEmails(ctx context.Context) ([]StaleEmail, error)
+	GetStaleEmails(ctx context.Context) ([]Email, error)
 }
 
 type GetStaleEmailsHandler struct {
@@ -34,7 +34,7 @@ func (h *GetStaleEmailsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	
+
 	if err := json.NewEncoder(w).Encode(staleEmails); err != nil {
 		slog.Error(fmt.Sprintf("error encoding response: %v", err))
 		response.WriteError(http.StatusInternalServerError, w, "error encoding response")

@@ -104,14 +104,7 @@ func (db *Database) DeletePending(ctx context.Context, id string) error {
 	return err
 }
 
-type StaleEmail struct {
-	Id        string    `json:"id"`
-	Status    string    `json:"status"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-func (db *Database) GetStaleEmails(ctx context.Context) ([]StaleEmail, error) {
+func (db *Database) GetStaleEmails(ctx context.Context) ([]Email, error) {
 	thresholdTime := time.Now().Add(-time.Duration(db.staleEmailsThresholdMinutes) * time.Minute)
 	thresholdStr := thresholdTime.Format(time.RFC3339)
 
@@ -174,7 +167,7 @@ func (db *Database) GetStaleEmails(ctx context.Context) ([]StaleEmail, error) {
 		nextToken = res.NextToken
 	}
 
-	staleEmails := make([]StaleEmail, 0, len(allRecords))
+	staleEmails := make([]Email, 0, len(allRecords))
 	for _, record := range allRecords {
 		latest, _ := record.Attributes["Latest"].(string)
 		createdAtStr, _ := record.Attributes["CreatedAt"].(string)
@@ -183,7 +176,7 @@ func (db *Database) GetStaleEmails(ctx context.Context) ([]StaleEmail, error) {
 		createdAt, _ := time.Parse(time.RFC3339, createdAtStr)
 		updatedAt, _ := time.Parse(time.RFC3339, updatedAtStr)
 
-		staleEmails = append(staleEmails, StaleEmail{
+		staleEmails = append(staleEmails, Email{
 			Id:        record.Id,
 			Status:    latest, // Map Latest to Status as per requirements
 			CreatedAt: createdAt,
@@ -192,6 +185,80 @@ func (db *Database) GetStaleEmails(ctx context.Context) ([]StaleEmail, error) {
 	}
 
 	return staleEmails, nil
+}
+
+func (db *Database) GetInvalidEmails(ctx context.Context) ([]Email, error) {
+	// Query for emails with Status = INVALID
+	query := fmt.Sprintf(`SELECT Id, Status, Attributes 
+		FROM "%v" 
+		WHERE Status=?`,
+		db.tableName)
+
+	params, err := attributevalue.MarshalList([]interface{}{
+		StatusInvalid,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal parameters: %w", err)
+	}
+
+	var allRecords []struct {
+		Id         string                 `dynamodbav:"Id"`
+		Status     string                 `dynamodbav:"Status"`
+		Attributes map[string]interface{} `dynamodbav:"Attributes"`
+	}
+
+	// Paginate through all results using NextToken
+	var nextToken *string
+	for {
+		stmt := &dynamodb.ExecuteStatementInput{
+			Statement:  aws.String(query),
+			Parameters: params,
+			NextToken:  nextToken,
+		}
+
+		res, err := db.dynamo.ExecuteStatement(ctx, stmt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to execute statement: %w", err)
+		}
+
+		var records []struct {
+			Id         string                 `dynamodbav:"Id"`
+			Status     string                 `dynamodbav:"Status"`
+			Attributes map[string]interface{} `dynamodbav:"Attributes"`
+		}
+
+		if err := attributevalue.UnmarshalListOfMaps(res.Items, &records); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal records: %w", err)
+		}
+
+		allRecords = append(allRecords, records...)
+
+		// Check if there are more results
+		if res.NextToken == nil {
+			break
+		}
+		nextToken = res.NextToken
+	}
+
+	invalidEmails := make([]Email, 0, len(allRecords))
+	for _, record := range allRecords {
+		createdAtStr, _ := record.Attributes["CreatedAt"].(string)
+		updatedAtStr, _ := record.Attributes["UpdatedAt"].(string)
+		errorMessage, _ := record.Attributes["ErrorMessage"].(string)
+
+		createdAt, _ := time.Parse(time.RFC3339, createdAtStr)
+		updatedAt, _ := time.Parse(time.RFC3339, updatedAtStr)
+
+		invalidEmails = append(invalidEmails, Email{
+			Id:           record.Id,
+			Status:       record.Status,
+			CreatedAt:    createdAt,
+			UpdatedAt:    updatedAt,
+			ErrorMessage: errorMessage,
+		})
+	}
+
+	return invalidEmails, nil
 }
 
 func (db *Database) RequeueEmail(ctx context.Context, id string) error {

@@ -24,7 +24,8 @@ type payloadStorageInterface interface {
 type databaseInterface interface {
 	Insert(ctx context.Context, id string, emlFilePath string, payloadPath string) error
 	DeletePending(ctx context.Context, id string) error
-	GetStaleEmails(ctx context.Context) ([]StaleEmail, error)
+	GetStaleEmails(ctx context.Context) ([]Email, error)
+	GetInvalidEmails(ctx context.Context) ([]Email, error)
 	RequeueEmail(ctx context.Context, id string) error
 }
 
@@ -77,8 +78,12 @@ func (s *Service) Save(ctx context.Context, emailRequests []EmailRequest) error 
 	return nil
 }
 
-func (s *Service) GetStaleEmails(ctx context.Context) ([]StaleEmail, error) {
+func (s *Service) GetStaleEmails(ctx context.Context) ([]Email, error) {
 	return s.db.GetStaleEmails(ctx)
+}
+
+func (s *Service) GetInvalidEmails(ctx context.Context) ([]Email, error) {
+	return s.db.GetInvalidEmails(ctx)
 }
 
 func (s *Service) RequeueEmail(ctx context.Context, id string) error {

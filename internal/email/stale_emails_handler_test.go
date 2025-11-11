@@ -12,18 +12,18 @@ import (
 )
 
 type staleEmailsServiceMock struct {
-	returnErr    error
-	staleEmails  []StaleEmail
+	returnErr   error
+	staleEmails []Email
 }
 
-func newStaleEmailsServiceMock(withError bool, staleEmails []StaleEmail) *staleEmailsServiceMock {
+func newStaleEmailsServiceMock(withError bool, staleEmails []Email) *staleEmailsServiceMock {
 	if withError {
 		return &staleEmailsServiceMock{returnErr: errors.New("mock error")}
 	}
 	return &staleEmailsServiceMock{staleEmails: staleEmails}
 }
 
-func (m *staleEmailsServiceMock) GetStaleEmails(_ context.Context) ([]StaleEmail, error) {
+func (m *staleEmailsServiceMock) GetStaleEmails(_ context.Context) ([]Email, error) {
 	if m.returnErr != nil {
 		return nil, m.returnErr
 	}
@@ -36,7 +36,7 @@ func TestGetStaleEmailsHandler_ServeHTTP(t *testing.T) {
 	type caseStruct struct {
 		name               string
 		withServiceError   bool
-		staleEmails        []StaleEmail
+		staleEmails        []Email
 		expectedStatusCode int
 		expectedBody       string
 	}
@@ -47,7 +47,7 @@ func TestGetStaleEmailsHandler_ServeHTTP(t *testing.T) {
 		{
 			name:             "success with emails",
 			withServiceError: false,
-			staleEmails: []StaleEmail{
+			staleEmails: []Email{
 				{
 					Id:        "test-id-1",
 					Status:    "INTAKING",
@@ -67,7 +67,7 @@ func TestGetStaleEmailsHandler_ServeHTTP(t *testing.T) {
 		{
 			name:               "success with no emails",
 			withServiceError:   false,
-			staleEmails:        []StaleEmail{},
+			staleEmails:        []Email{},
 			expectedStatusCode: http.StatusOK,
 			expectedBody:       `[]`,
 		},
@@ -95,4 +95,3 @@ func TestGetStaleEmailsHandler_ServeHTTP(t *testing.T) {
 		})
 	}
 }
-
