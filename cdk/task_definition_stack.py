@@ -227,7 +227,7 @@ class TaskDefinitionStack(Stack):
 
         container.add_environment(
             name='PAYLOAD_STORAGE_PATH',
-            value=mc_email_efs_folder_name + "/requests"
+            value=mc_email_efs_folder_name + "/json"
         )
 
         container.add_port_mappings(
