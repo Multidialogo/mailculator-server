@@ -33,10 +33,24 @@ type createEmailRequestBody struct {
 	Data []emailDataInput `json:"data" validate:"gt=0,dive,required"`
 }
 
-func (e emailDataInput) ToJSON() ([]byte, error) {
-	return json.Marshal(createEmailRequestBody{
-		Data: []emailDataInput{e},
-	})
+type CreateEmailResult struct {
+	ID     string       `json:"id"`
+	Status string       `json:"status"`
+	Error  *ErrorDetail `json:"error,omitempty"`
+}
+
+type ErrorDetail struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+type BatchEmailResponse struct {
+	Summary struct {
+		Total      int `json:"total"`
+		Successful int `json:"successful"`
+		Failed     int `json:"failed"`
+	} `json:"summary"`
+	Results []CreateEmailResult `json:"results"`
 }
 
 type serviceInterface interface {
@@ -59,7 +73,7 @@ func (h *CreateEmailHandler) emailRequestsFromBody(rb createEmailRequestBody) ([
 	emailRequests := make([]EmailRequest, len(rb.Data))
 
 	for i, e := range rb.Data {
-		payloadBytes, err := e.ToJSON()
+		payloadBytes, err := json.Marshal(e)
 		if err != nil {
 			return nil, fmt.Errorf("failed to marshal single email payload: %w", err)
 		}

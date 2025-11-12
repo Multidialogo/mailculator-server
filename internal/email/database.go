@@ -190,10 +190,12 @@ func (db *Database) GetStaleEmails(ctx context.Context) ([]Email, error) {
 func (db *Database) GetInvalidEmails(ctx context.Context) ([]Email, error) {
 	query := fmt.Sprintf(`SELECT Id, Status, Attributes
 		FROM "%v"
-		WHERE Status=?`,
+		WHERE Status=?
+		AND Attributes.Latest=?`,
 		db.tableName)
 
 	params, err := attributevalue.MarshalList([]interface{}{
+		StatusMeta,
 		StatusInvalid,
 	})
 	if err != nil {
