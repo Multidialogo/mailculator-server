@@ -17,7 +17,7 @@ services:
       AWS_REGION: 'eu-west-1'
       ATTACHMENTS_BASE_PATH: 'testdata/attachments'
       EML_STORAGE_PATH: 'testdata/.out/eml'
-      PAYLOAD_STORAGE_PATH: 'testdata/.out/requests'
+      PAYLOAD_STORAGE_PATH: 'testdata/.out/json'
       EMAIL_OUTBOX_TABLE: 'Outbox'
     command: ['sh', '-c', 'go mod tidy && go test ./...']
     volumes:
