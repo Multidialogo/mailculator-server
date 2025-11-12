@@ -40,35 +40,34 @@ const (
 )
 
 type Database struct {
-	dynamo                        *dynamodb.Client
-	tableName                     string
-	staleEmailsThresholdMinutes   int
+	dynamo                      *dynamodb.Client
+	tableName                   string
+	staleEmailsThresholdMinutes int
 }
 
 func NewDatabase(dynamo *dynamodb.Client, tableName string, staleEmailsThresholdMinutes int) *Database {
 	return &Database{
-		dynamo:                        dynamo,
-		tableName:                     tableName,
-		staleEmailsThresholdMinutes:   staleEmailsThresholdMinutes,
+		dynamo:                      dynamo,
+		tableName:                   tableName,
+		staleEmailsThresholdMinutes: staleEmailsThresholdMinutes,
 	}
 }
 
-func (db *Database) getMetaAttributes(status string, emlFilePath string, payloadFilePath string, createdAt string, ttl int64) map[string]interface{} {
+func (db *Database) getMetaAttributes(status string, payloadFilePath string, createdAt string, ttl int64) map[string]interface{} {
 	return map[string]interface{}{
 		"Latest":          status,
 		"CreatedAt":       createdAt,
 		"UpdatedAt":       createdAt,
-		"EMLFilePath":     emlFilePath,
 		"PayloadFilePath": payloadFilePath,
 		"TTL":             ttl,
 	}
 }
 
-func (db *Database) Insert(ctx context.Context, id string, emlFilePath string, payloadFilePath string) error {
+func (db *Database) Insert(ctx context.Context, id string, payloadFilePath string) error {
 	ttl := time.Now().Add(30 * 24 * time.Hour).Unix()
 
 	metaStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?, 'Attributes': ?}", db.tableName)
-	metaAttrs := db.getMetaAttributes(statusInitial, emlFilePath, payloadFilePath, time.Now().Format(time.RFC3339), ttl)
+	metaAttrs := db.getMetaAttributes(statusInitial, payloadFilePath, time.Now().Format(time.RFC3339), ttl)
 	metaParams, _ := attributevalue.MarshalList([]interface{}{id, statusMeta, metaAttrs})
 
 	inStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?, 'Attributes': ?}", db.tableName)

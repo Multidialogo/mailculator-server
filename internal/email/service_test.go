@@ -5,26 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"multicarrier-email-api/internal/email/testutils"
-	"multicarrier-email-api/internal/eml"
-
 	"github.com/stretchr/testify/assert"
 )
-
-type emlStorageMock struct {
-	callCount           int
-	errorAfterCallCount int
-}
-
-func (m *emlStorageMock) Store(_ eml.EML) (string, error) {
-	m.callCount++
-
-	if m.callCount > m.errorAfterCallCount {
-		return "", errors.New("mock error")
-	}
-
-	return "file.EML", nil
-}
 
 type payloadStorageMock struct {
 	callCount           int
@@ -47,7 +29,7 @@ type databaseMock struct {
 	deletedCallCount          int
 }
 
-func (m *databaseMock) Insert(_ context.Context, _ string, _ string, _ string) error {
+func (m *databaseMock) Insert(_ context.Context, _ string, _ string) error {
 	m.insertCallCount++
 
 	if m.insertCallCount > m.errorAfterInsertCallCount {
@@ -77,23 +59,22 @@ func (m *databaseMock) RequeueEmail(_ context.Context, _ string) error {
 func TestService_Save(t *testing.T) {
 	t.Parallel()
 
-	emlBatch := testutils.DummyEMLDataBatch(2)
-
 	// Create EmailRequest batch with dummy payloads
-	emailRequests := make([]EmailRequest, len(emlBatch))
-	for i, eml := range emlBatch {
-		emailRequests[i] = EmailRequest{
-			EML:          eml,
-			PayloadBytes: []byte("test payload " + string(rune(i))),
-		}
+	emailRequests := []EmailRequest{
+		{
+			MessageId:    "msg1",
+			PayloadBytes: []byte("test payload 1"),
+		},
+		{
+			MessageId:    "msg2",
+			PayloadBytes: []byte("test payload 2"),
+		},
 	}
 
 	type caseStruct struct {
 		name                                   string
-		emlStorageErrorAfterCallCount          int
 		payloadStorageErrorAfterCallCount      int
 		databaseErrorAfterInsertCallCount      int
-		expectEMLStorageStoreCallCount         int
 		expectPayloadStorageStoreCallCount     int
 		expectedDatabaseInsertCallCount        int
 		expectedDatabaseDeletePendingCallCount int
@@ -103,43 +84,26 @@ func TestService_Save(t *testing.T) {
 	testCases := []caseStruct{
 		{
 			name:                                   "success",
-			emlStorageErrorAfterCallCount:          2,
 			payloadStorageErrorAfterCallCount:      2,
 			databaseErrorAfterInsertCallCount:      2,
-			expectEMLStorageStoreCallCount:         2,
 			expectPayloadStorageStoreCallCount:     2,
 			expectedDatabaseInsertCallCount:        2,
 			expectedDatabaseDeletePendingCallCount: 0,
 			expectError:                            false,
 		},
 		{
-			name:                                   "eml storage error",
-			emlStorageErrorAfterCallCount:          0,
-			payloadStorageErrorAfterCallCount:      2,
+			name:                                   "payload storage error",
+			payloadStorageErrorAfterCallCount:      0,
 			databaseErrorAfterInsertCallCount:      2,
-			expectEMLStorageStoreCallCount:         1,
-			expectPayloadStorageStoreCallCount:     0,
+			expectPayloadStorageStoreCallCount:     1,
 			expectedDatabaseInsertCallCount:        0,
 			expectedDatabaseDeletePendingCallCount: 0,
 			expectError:                            true,
 		},
 		{
-			name:                                   "payload storage error",
-			emlStorageErrorAfterCallCount:          2,
-			payloadStorageErrorAfterCallCount:      1,
-			databaseErrorAfterInsertCallCount:      2,
-			expectEMLStorageStoreCallCount:         2,
-			expectPayloadStorageStoreCallCount:     2,
-			expectedDatabaseInsertCallCount:        1,
-			expectedDatabaseDeletePendingCallCount: 1,
-			expectError:                            true,
-		},
-		{
 			name:                                   "database error",
-			emlStorageErrorAfterCallCount:          2,
 			payloadStorageErrorAfterCallCount:      2,
 			databaseErrorAfterInsertCallCount:      1,
-			expectEMLStorageStoreCallCount:         2,
 			expectPayloadStorageStoreCallCount:     2,
 			expectedDatabaseInsertCallCount:        2,
 			expectedDatabaseDeletePendingCallCount: 1,
@@ -151,14 +115,12 @@ func TestService_Save(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			emlStorage := &emlStorageMock{errorAfterCallCount: tc.emlStorageErrorAfterCallCount}
 			payloadStorage := &payloadStorageMock{errorAfterCallCount: tc.payloadStorageErrorAfterCallCount}
 			database := &databaseMock{errorAfterInsertCallCount: tc.databaseErrorAfterInsertCallCount}
 
-			sut := &Service{emlStorage: emlStorage, payloadStorage: payloadStorage, db: database}
+			sut := &Service{payloadStorage: payloadStorage, db: database}
 
 			err := sut.Save(context.TODO(), emailRequests)
-			assert.Equal(t, tc.expectEMLStorageStoreCallCount, emlStorage.callCount)
 			assert.Equal(t, tc.expectPayloadStorageStoreCallCount, payloadStorage.callCount)
 			assert.Equal(t, tc.expectedDatabaseInsertCallCount, database.insertCallCount)
 			assert.Equal(t, tc.expectedDatabaseDeletePendingCallCount, database.deletedCallCount)

@@ -57,12 +57,12 @@ func TestOutboxComponentWorkflow(t *testing.T) {
 
 	// insert two records in dynamo
 	firstId := uuid.NewString()
-	err = sut.Insert(context.TODO(), firstId, "/", "/")
+	err = sut.Insert(context.TODO(), firstId, "/")
 	require.NoErrorf(t, err, "failed inserting id %s, error: %v", firstId, err)
 	fixtures[firstId] = "ACCEPTED"
 
 	secondId := uuid.NewString()
-	err = sut.Insert(context.TODO(), secondId, "/", "/")
+	err = sut.Insert(context.TODO(), secondId, "/")
 	require.NoErrorf(t, err, "failed inserting id %s, error: %v", secondId, err)
 	fixtures[secondId] = "ACCEPTED"
 
@@ -72,7 +72,7 @@ func TestOutboxComponentWorkflow(t *testing.T) {
 	require.Len(t, res, 2)
 
 	// should not be able to insert again same id
-	err = sut.Insert(context.TODO(), firstId, "/", "/")
+	err = sut.Insert(context.TODO(), firstId, "/")
 	require.Errorf(t, err, "inserted id %s, but it should have not because it's duplicated", firstId)
 
 	// delete pending
@@ -112,7 +112,7 @@ func TestReadyRecordHasTTL(t *testing.T) {
 
 	// insert a record
 	testId := uuid.NewString()
-	err := sut.Insert(context.TODO(), testId, "/", "/")
+	err := sut.Insert(context.TODO(), testId, "/")
 	require.NoErrorf(t, err, "failed inserting id %s, error: %v", testId, err)
 	fixtures[testId] = "ACCEPTED"
 
