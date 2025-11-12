@@ -4,9 +4,6 @@ aws:
 attachments:
   base-path: "/efs/attachments"
 
-eml-storage:
-  path: "/efs/eml"
-
 payload-storage:
   path: "/efs/json"
 

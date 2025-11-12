@@ -9,9 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"path/filepath"
-	"time"
 
-	"multicarrier-email-api/internal/eml"
 	"multicarrier-email-api/internal/response"
 
 	"github.com/go-playground/validator/v10"
@@ -82,21 +80,8 @@ func (h *CreateEmailHandler) emailRequestsFromBody(rb createEmailRequestBody) ([
 			e.Attachments[j] = filepath.Join(h.attachmentsBasePath, attachment)
 		}
 
-		emlData := eml.EML{
-			MessageId:     e.Id,
-			From:          e.From,
-			ReplyTo:       e.ReplyTo,
-			To:            e.To,
-			Subject:       e.Subject,
-			BodyHTML:      e.BodyHTML,
-			BodyText:      e.BodyText,
-			Date:          time.Now(),
-			Attachments:   e.Attachments,
-			CustomHeaders: e.CustomHeaders,
-		}
-
 		emailRequests[i] = EmailRequest{
-			EML:          emlData,
+			MessageId:    e.Id,
 			PayloadBytes: payloadBytes,
 		}
 	}

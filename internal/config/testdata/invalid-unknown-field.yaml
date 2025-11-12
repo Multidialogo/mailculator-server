@@ -5,9 +5,6 @@ aws:
 attachments:
   base-path: "/efs/attachments"
 
-eml-storage:
-  path: "/efs/eml"
-
 outbox:
   table-name: "Outbox"
 

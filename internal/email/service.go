@@ -4,25 +4,20 @@ import (
 	"context"
 	"fmt"
 	"log"
-
-	"multicarrier-email-api/internal/eml"
 )
 
 type EmailRequest struct {
-	EML          eml.EML
+	MessageId    string
 	PayloadBytes []byte
 }
 
-type emlStorageInterface interface {
-	Store(eml eml.EML) (string, error)
-}
 
 type payloadStorageInterface interface {
 	Store(messageId string, payload []byte) (string, error)
 }
 
 type databaseInterface interface {
-	Insert(ctx context.Context, id string, emlFilePath string, payloadPath string) error
+	Insert(ctx context.Context, id string, payloadPath string) error
 	DeletePending(ctx context.Context, id string) error
 	GetStaleEmails(ctx context.Context) ([]Email, error)
 	GetInvalidEmails(ctx context.Context) ([]Email, error)
@@ -30,14 +25,12 @@ type databaseInterface interface {
 }
 
 type Service struct {
-	emlStorage     emlStorageInterface
 	payloadStorage payloadStorageInterface
 	db             databaseInterface
 }
 
-func NewService(emlStorage emlStorageInterface, payloadStorage payloadStorageInterface, db databaseInterface) *Service {
+func NewService(payloadStorage payloadStorageInterface, db databaseInterface) *Service {
 	return &Service{
-		emlStorage:     emlStorage,
 		payloadStorage: payloadStorage,
 		db:             db,
 	}
@@ -52,27 +45,21 @@ func (s *Service) tryDelete(ctx context.Context, ids []string) {
 }
 
 func (s *Service) Save(ctx context.Context, emailRequests []EmailRequest) error {
-	var insertedEmls []string
+	var insertedIds []string
 
 	for _, req := range emailRequests {
-		path, err := s.emlStorage.Store(req.EML)
+		payloadPath, err := s.payloadStorage.Store(req.MessageId, req.PayloadBytes)
 		if err != nil {
-			s.tryDelete(ctx, insertedEmls)
-			return fmt.Errorf("failed to create EML file: %w", err)
-		}
-
-		payloadPath, err := s.payloadStorage.Store(req.EML.MessageId, req.PayloadBytes)
-		if err != nil {
-			s.tryDelete(ctx, insertedEmls)
+			s.tryDelete(ctx, insertedIds)
 			return fmt.Errorf("failed to create payload file: %w", err)
 		}
 
-		if err := s.db.Insert(ctx, req.EML.MessageId, path, payloadPath); err != nil {
-			s.tryDelete(ctx, insertedEmls)
+		if err := s.db.Insert(ctx, req.MessageId, payloadPath); err != nil {
+			s.tryDelete(ctx, insertedIds)
 			return fmt.Errorf("failed to insert record in database: %w", err)
 		}
 
-		insertedEmls = append(insertedEmls, req.EML.MessageId)
+		insertedIds = append(insertedIds, req.MessageId)
 	}
 
 	return nil

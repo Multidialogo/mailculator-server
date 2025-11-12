@@ -3,10 +3,11 @@ package config
 import (
 	"context"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"io"
 	"os"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -20,10 +21,6 @@ type AwsConfig struct {
 
 type AttachmentsConfig struct {
 	BasePath string `yaml:"base-path" validate:"required"`
-}
-
-type EmlStorageConfig struct {
-	Path string `yaml:"path" validate:"required"`
 }
 
 type PayloadStorageConfig struct {
@@ -42,7 +39,6 @@ type ServerConfig struct {
 type Config struct {
 	Aws            AwsConfig            `yaml:"aws,flow"`
 	Attachments    AttachmentsConfig    `yaml:"attachments,flow" validate:"required"`
-	EmlStorage     EmlStorageConfig     `yaml:"eml-storage,flow" validate:"required"`
 	PayloadStorage PayloadStorageConfig `yaml:"payload-storage,flow" validate:"required"`
 	Outbox         OutboxConfig         `yaml:"outbox,flow" validate:"required"`
 	Server         ServerConfig         `yaml:"server,flow" validate:"required"`
@@ -97,10 +93,6 @@ func (c *Config) GetAwsConfig() aws.Config {
 
 func (c *Config) GetAttachmentsBasePath() string {
 	return c.Attachments.BasePath
-}
-
-func (c *Config) GetEmlStoragePath() string {
-	return c.EmlStorage.Path
 }
 
 func (c *Config) GetPayloadStoragePath() string {
