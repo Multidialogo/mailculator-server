@@ -5,7 +5,7 @@ eml-storage:
   path: "/efs/eml"
 
 payload-storage:
-  path: "/efs/payloads"
+  path: "/efs/json"
 
 outbox:
   table-name: "Outbox"
