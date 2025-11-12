@@ -23,14 +23,13 @@ type configProvider interface {
 	GetPayloadStoragePath() string
 	GetOutboxTableName() string
 	GetStaleEmailsThresholdMinutes() int
-	GetInvalidEmailsThresholdDays() int
 }
 
 func NewApp(cp configProvider) *App {
 	emlStorage := email.NewEMLStorage(cp.GetEmlStoragePath())
 	payloadStorage := email.NewPayloadStorage(cp.GetPayloadStoragePath())
 	dynamo := dynamodb.NewFromConfig(cp.GetAwsConfig())
-	db := email.NewDatabase(dynamo, cp.GetOutboxTableName(), cp.GetStaleEmailsThresholdMinutes(), cp.GetInvalidEmailsThresholdDays())
+	db := email.NewDatabase(dynamo, cp.GetOutboxTableName(), cp.GetStaleEmailsThresholdMinutes())
 
 	emailService := email.NewService(emlStorage, payloadStorage, db)
 
