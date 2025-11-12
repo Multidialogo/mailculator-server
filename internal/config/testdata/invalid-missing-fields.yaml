@@ -1,7 +1,5 @@
 attachments:
   base-path: "/efs/attachments"
 
-eml-storage:
-
 outbox:
   table-name: "Outbox"

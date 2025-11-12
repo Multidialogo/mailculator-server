@@ -2,10 +2,7 @@ module multicarrier-email-api
 
 go 1.25
 
-require (
-	github.com/h2non/filetype v1.1.3
-	github.com/stretchr/testify v1.8.4 // or the latest version
-)
+require github.com/stretchr/testify v1.8.4 // or the latest version
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.36.3

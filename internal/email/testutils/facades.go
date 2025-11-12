@@ -4,11 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"multicarrier-email-api/internal/eml"
 	"os"
 	"time"
-
-	"github.com/google/uuid"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -41,10 +38,9 @@ type EmailTestFixtureKeys struct {
 }
 
 type EmailTestFixture struct {
-	Id          string
-	Status      string
-	Latest      string
-	EMLFilePath string
+	Id     string
+	Status string
+	Latest string
 }
 
 type dynamodbRecord struct {
@@ -73,10 +69,9 @@ func (edf *EmailDatabaseFacade) unmarshalList(src []map[string]types.AttributeVa
 
 	for i, item := range items {
 		emails[i] = EmailTestFixture{
-			Id:          item.Id,
-			Status:      item.Status,
-			Latest:      fmt.Sprint(item.Attributes["Latest"]),
-			EMLFilePath: fmt.Sprint(item.Attributes["EMLFilePath"]),
+			Id:     item.Id,
+			Status: item.Status,
+			Latest: fmt.Sprint(item.Attributes["Latest"]),
 		}
 	}
 
@@ -179,7 +174,6 @@ func (edf *EmailDatabaseFacade) InsertEmailWithStatus(ctx context.Context, id st
 		"Latest":          latestStatus,
 		"CreatedAt":       createdAt,
 		"UpdatedAt":       updatedAt,
-		"EMLFilePath":     "/test/path/file.eml",
 		"PayloadFilePath": "/test/path/payload.json",
 		"TTL":             ttl,
 	}
@@ -207,21 +201,3 @@ func (edf *EmailDatabaseFacade) InsertEmailWithStatus(ctx context.Context, id st
 	return err
 }
 
-func DummyEMLDataBatch(count int) []eml.EML {
-	slice := make([]eml.EML, count)
-
-	for i := 0; i < count; i++ {
-		slice[i] = eml.EML{
-			MessageId: uuid.NewString(),
-			From:      "sender@test.multidialogo.it",
-			ReplyTo:   "no-reply@test.multidialogo.it",
-			To:        "recipient@test.multidialogo.it",
-			Subject:   "Test Email with Reply-To",
-			BodyHTML:  "<p>HTML format.</p>",
-			BodyText:  "Plain text format.",
-			Date:      time.Now(),
-		}
-	}
-
-	return slice
-}

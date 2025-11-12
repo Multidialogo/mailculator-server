@@ -19,19 +19,17 @@ type App struct {
 type configProvider interface {
 	GetAwsConfig() aws.Config
 	GetAttachmentsBasePath() string
-	GetEmlStoragePath() string
 	GetPayloadStoragePath() string
 	GetOutboxTableName() string
 	GetStaleEmailsThresholdMinutes() int
 }
 
 func NewApp(cp configProvider) *App {
-	emlStorage := email.NewEMLStorage(cp.GetEmlStoragePath())
 	payloadStorage := email.NewPayloadStorage(cp.GetPayloadStoragePath())
 	dynamo := dynamodb.NewFromConfig(cp.GetAwsConfig())
 	db := email.NewDatabase(dynamo, cp.GetOutboxTableName(), cp.GetStaleEmailsThresholdMinutes())
 
-	emailService := email.NewService(emlStorage, payloadStorage, db)
+	emailService := email.NewService(payloadStorage, db)
 
 	return &App{
 		attachmentsBasePath: cp.GetAttachmentsBasePath(),

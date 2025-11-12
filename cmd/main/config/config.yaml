@@ -4,9 +4,6 @@ aws:
 attachments:
   base-path: "${ATTACHMENTS_BASE_PATH}"
 
-eml-storage:
-  path: "${EML_STORAGE_PATH}"
-
 payload-storage:
   path: "${PAYLOAD_STORAGE_PATH}"
 
