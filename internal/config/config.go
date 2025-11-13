@@ -19,10 +19,6 @@ type AwsConfig struct {
 	sdkConfig    aws.Config
 }
 
-type AttachmentsConfig struct {
-	BasePath string `yaml:"base-path" validate:"required"`
-}
-
 type PayloadStorageConfig struct {
 	Path string `yaml:"path" validate:"required"`
 }
@@ -38,7 +34,6 @@ type ServerConfig struct {
 
 type Config struct {
 	Aws            AwsConfig            `yaml:"aws,flow"`
-	Attachments    AttachmentsConfig    `yaml:"attachments,flow" validate:"required"`
 	PayloadStorage PayloadStorageConfig `yaml:"payload-storage,flow" validate:"required"`
 	Outbox         OutboxConfig         `yaml:"outbox,flow" validate:"required"`
 	Server         ServerConfig         `yaml:"server,flow" validate:"required"`
@@ -89,10 +84,6 @@ func (c *Config) Load(r io.Reader) error {
 
 func (c *Config) GetAwsConfig() aws.Config {
 	return c.Aws.sdkConfig
-}
-
-func (c *Config) GetAttachmentsBasePath() string {
-	return c.Attachments.BasePath
 }
 
 func (c *Config) GetPayloadStoragePath() string {

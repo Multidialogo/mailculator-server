@@ -2,9 +2,6 @@ aws:
   region: "dummy-region-with-quotation-marks"
   base-endpoint: dummy-base-endpoint
 
-attachments:
-  base-path: "/efs/attachments"
-
 outbox:
   table-name: "Outbox"
 

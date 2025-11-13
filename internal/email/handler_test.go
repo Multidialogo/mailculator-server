@@ -80,7 +80,7 @@ func TestCreateEmailHandler_ServeHTTP(t *testing.T) {
 			response := httptest.NewRecorder()
 
 			service := newEmailServiceMock(tc.withServiceError)
-			sut := NewCreateEmailHandler("testdata/handler_test/resources", service)
+			sut := NewCreateEmailHandler(service)
 
 			sut.ServeHTTP(response, request)
 
