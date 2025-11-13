@@ -1,5 +1,2 @@
-attachments:
-  base-path: "/efs/attachments"
-
 outbox:
   table-name: "Outbox"

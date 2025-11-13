@@ -1,9 +1,6 @@
 aws:
   base-endpoint: "endpoint.local"
 
-attachments:
-  base-path: "/efs/attachments"
-
 payload-storage:
   path: "/efs/json"
 

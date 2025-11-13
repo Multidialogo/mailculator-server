@@ -12,13 +12,11 @@ import (
 )
 
 type App struct {
-	attachmentsBasePath string
-	emailService        *email.Service
+	emailService *email.Service
 }
 
 type configProvider interface {
 	GetAwsConfig() aws.Config
-	GetAttachmentsBasePath() string
 	GetPayloadStoragePath() string
 	GetOutboxTableName() string
 	GetStaleEmailsThresholdMinutes() int
@@ -32,15 +30,14 @@ func NewApp(cp configProvider) *App {
 	emailService := email.NewService(payloadStorage, db)
 
 	return &App{
-		attachmentsBasePath: cp.GetAttachmentsBasePath(),
-		emailService:        emailService,
+		emailService: emailService,
 	}
 }
 
 func (a *App) NewServer(port int) *http.Server {
 	mux := http.NewServeMux()
 
-	createEmail := email.NewCreateEmailHandler(a.attachmentsBasePath, a.emailService)
+	createEmail := email.NewCreateEmailHandler(a.emailService)
 	mux.Handle("POST /emails", createEmail)
 
 	getStaleEmails := email.NewGetStaleEmailsHandler(a.emailService)
