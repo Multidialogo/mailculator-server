@@ -8,7 +8,6 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"path/filepath"
 
 	"multicarrier-email-api/internal/response"
 
@@ -56,14 +55,12 @@ type serviceInterface interface {
 }
 
 type CreateEmailHandler struct {
-	attachmentsBasePath string
-	emailService        serviceInterface
+	emailService serviceInterface
 }
 
-func NewCreateEmailHandler(attachmentsBasePath string, emailService serviceInterface) *CreateEmailHandler {
+func NewCreateEmailHandler(emailService serviceInterface) *CreateEmailHandler {
 	return &CreateEmailHandler{
-		attachmentsBasePath: attachmentsBasePath,
-		emailService:        emailService,
+		emailService: emailService,
 	}
 }
 
@@ -74,10 +71,6 @@ func (h *CreateEmailHandler) emailRequestsFromBody(rb createEmailRequestBody) ([
 		payloadBytes, err := json.Marshal(e)
 		if err != nil {
 			return nil, fmt.Errorf("failed to marshal single email payload: %w", err)
-		}
-
-		for j, attachment := range e.Attachments {
-			e.Attachments[j] = filepath.Join(h.attachmentsBasePath, attachment)
 		}
 
 		emailRequests[i] = EmailRequest{

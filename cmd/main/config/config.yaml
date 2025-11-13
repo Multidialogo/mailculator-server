@@ -1,9 +1,6 @@
 aws:
   base-endpoint: "${AWS_BASE_ENDPOINT}"
 
-attachments:
-  base-path: "${ATTACHMENTS_BASE_PATH}"
-
 payload-storage:
   path: "${PAYLOAD_STORAGE_PATH}"
 
