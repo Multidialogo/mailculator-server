@@ -85,24 +85,6 @@ func (db *Database) Insert(ctx context.Context, id string, payloadFilePath strin
 	return err
 }
 
-func (db *Database) DeletePending(ctx context.Context, id string) error {
-	metaStmt := fmt.Sprintf("DELETE FROM \"%v\" WHERE Id=? AND Status=?", db.tableName)
-	metaParams, _ := attributevalue.MarshalList([]interface{}{id, statusMeta})
-
-	inStmt := fmt.Sprintf("DELETE FROM \"%v\" WHERE Id=? AND Status=?", db.tableName)
-	inParams, _ := attributevalue.MarshalList([]interface{}{id, statusInitial})
-
-	ti := &dynamodb.ExecuteTransactionInput{
-		TransactStatements: []types.ParameterizedStatement{
-			{Statement: aws.String(metaStmt), Parameters: metaParams},
-			{Statement: aws.String(inStmt), Parameters: inParams},
-		},
-	}
-
-	_, err := db.dynamo.ExecuteTransaction(ctx, ti)
-	return err
-}
-
 func (db *Database) GetStaleEmails(ctx context.Context) ([]Email, error) {
 	thresholdTime := time.Now().Add(-time.Duration(db.staleEmailsThresholdMinutes) * time.Minute)
 	thresholdStr := thresholdTime.Format(time.RFC3339)
