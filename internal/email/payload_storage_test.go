@@ -132,3 +132,52 @@ func TestPayloadStorageDirectoryCreation(t *testing.T) {
 	}
 }
 
+func TestPayloadStorageDelete(t *testing.T) {
+	// Setup
+	tmpDir := t.TempDir()
+	storage := NewPayloadStorage(tmpDir)
+
+	messageId := "65ed6bfa-063c-5219-844d-e099c88a17f4"
+	payload := []byte("test payload")
+
+	// Create a file first
+	path, err := storage.Store(messageId, payload)
+	if err != nil {
+		t.Fatalf("failed to store payload: %v", err)
+	}
+
+	// Verify file exists
+	if _, err := os.Stat(path); err != nil {
+		t.Fatalf("file should exist before delete: %v", err)
+	}
+
+	// Execute delete
+	err = storage.Delete(path)
+
+	// Verify no error
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+
+	// Verify file no longer exists
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Errorf("expected file to be deleted, but it still exists")
+	}
+}
+
+func TestPayloadStorageDeleteNonExistentFile(t *testing.T) {
+	// Setup
+	tmpDir := t.TempDir()
+	storage := NewPayloadStorage(tmpDir)
+
+	nonExistentPath := filepath.Join(tmpDir, "non-existent-file.json")
+
+	// Execute delete on non-existent file
+	err := storage.Delete(nonExistentPath)
+
+	// Verify no error (implementation should handle non-existent files gracefully)
+	if err != nil {
+		t.Errorf("expected no error when deleting non-existent file, got %v", err)
+	}
+}
+

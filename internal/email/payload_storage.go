@@ -37,3 +37,10 @@ func (s *PayloadStorage) Store(messageId string, payload []byte) (string, error)
 
 	return path, nil
 }
+
+func (s *PayloadStorage) Delete(payloadPath string) error {
+	if err := os.Remove(payloadPath); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to delete payload file %s: %w", payloadPath, err)
+	}
+	return nil
+}
