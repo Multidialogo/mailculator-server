@@ -74,26 +74,6 @@ func TestOutboxComponentWorkflow(t *testing.T) {
 	// should not be able to insert again same id
 	err = sut.Insert(context.TODO(), firstId, "/")
 	require.Errorf(t, err, "inserted id %s, but it should have not because it's duplicated", firstId)
-
-	// delete pending
-	err = sut.DeletePending(context.TODO(), firstId)
-	require.NoError(t, err)
-	delete(fixtures, firstId)
-
-	// now it should be 1 record with status ACCEPTED
-	res, err = of.Query(context.TODO(), "ACCEPTED", 25)
-	require.NoError(t, err)
-	require.Len(t, res, 1)
-
-	// delete other pending
-	err = sut.DeletePending(context.TODO(), secondId)
-	require.NoError(t, err)
-	delete(fixtures, secondId)
-
-	// now it should be 0 record with status ACCEPTED
-	res, err = of.Query(context.TODO(), "ACCEPTED", 25)
-	require.NoError(t, err)
-	require.Len(t, res, 0)
 }
 
 func TestReadyRecordHasTTL(t *testing.T) {

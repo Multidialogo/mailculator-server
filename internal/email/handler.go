@@ -38,7 +38,7 @@ type CreateEmailResult struct {
 
 type ErrorDetail struct {
 	Code    string `json:"code"`
-	Message string `json:"message"`
+	Message string `json:"message,omitempty"`
 }
 
 type BatchEmailResponse struct {
@@ -51,7 +51,7 @@ type BatchEmailResponse struct {
 }
 
 type serviceInterface interface {
-	Save(ctx context.Context, emailRequests []EmailRequest) error
+	Save(ctx context.Context, emailRequests []EmailRequest) []SaveResult
 }
 
 type CreateEmailHandler struct {
@@ -115,13 +115,62 @@ func (h *CreateEmailHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.emailService.Save(context.TODO(), emailRequests); err != nil {
-		slog.Error(fmt.Sprintf("error saving emails: %v", err))
-		response.WriteError(http.StatusConflict, w, "error saving emails")
-		return
+	saveResults := h.emailService.Save(context.TODO(), emailRequests)
+
+	var batchResponse BatchEmailResponse
+	batchResponse.Summary.Total = len(saveResults)
+	batchResponse.Results = make([]CreateEmailResult, len(saveResults))
+
+	for i, result := range saveResults {
+		emailResult := CreateEmailResult{
+			ID: result.MessageId,
+		}
+
+		if result.Success {
+			emailResult.Status = "success"
+			batchResponse.Summary.Successful++
+		} else {
+			emailResult.Status = "error"
+			emailResult.Error = &ErrorDetail{
+				Code:    result.ErrorCode,
+				Message: result.ErrorMessage,
+			}
+			batchResponse.Summary.Failed++
+		}
+
+		batchResponse.Results[i] = emailResult
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	var statusCode int
+	var responseBody []byte
+
+	if batchResponse.Summary.Failed == 0 {
+		// All succeeded - return 201 with empty body
+		statusCode = http.StatusCreated
+		responseBody = []byte("{}")
+	} else if batchResponse.Summary.Successful == 0 {
+		// None succeeded - return 422 with batch details
+		statusCode = http.StatusUnprocessableEntity
+		var err error
+		responseBody, err = json.Marshal(batchResponse)
+		if err != nil {
+			slog.Error(fmt.Sprintf("error marshalling response: %v", err))
+			response.WriteError(http.StatusInternalServerError, w, "error creating response")
+			return
+		}
+	} else {
+		// At least one succeeded - return 200 with batch details
+		statusCode = http.StatusOK
+		var err error
+		responseBody, err = json.Marshal(batchResponse)
+		if err != nil {
+			slog.Error(fmt.Sprintf("error marshalling response: %v", err))
+			response.WriteError(http.StatusInternalServerError, w, "error creating response")
+			return
+		}
+	}
+
+	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json")
-	_, _ = w.Write([]byte("{}"))
+	_, _ = w.Write(responseBody)
 }

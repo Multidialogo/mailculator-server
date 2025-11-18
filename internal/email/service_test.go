@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,24 +25,26 @@ func (m *payloadStorageMock) Store(_ string, _ []byte) (string, error) {
 	return "payload_file", nil
 }
 
+func (m *payloadStorageMock) Delete(_ string) error {
+	return nil
+}
+
 type databaseMock struct {
 	insertCallCount           int
 	errorAfterInsertCallCount int
-	deletedCallCount          int
+	insertError               error
 }
 
 func (m *databaseMock) Insert(_ context.Context, _ string, _ string) error {
 	m.insertCallCount++
 
 	if m.insertCallCount > m.errorAfterInsertCallCount {
+		if m.insertError != nil {
+			return m.insertError
+		}
 		return errors.New("mock error")
 	}
 
-	return nil
-}
-
-func (m *databaseMock) DeletePending(_ context.Context, _ string) error {
-	m.deletedCallCount++
 	return nil
 }
 
@@ -59,7 +63,6 @@ func (m *databaseMock) RequeueEmail(_ context.Context, _ string) error {
 func TestService_Save(t *testing.T) {
 	t.Parallel()
 
-	// Create EmailRequest batch with dummy payloads
 	emailRequests := []EmailRequest{
 		{
 			MessageId:    "msg1",
@@ -72,42 +75,60 @@ func TestService_Save(t *testing.T) {
 	}
 
 	type caseStruct struct {
-		name                                   string
-		payloadStorageErrorAfterCallCount      int
-		databaseErrorAfterInsertCallCount      int
-		expectPayloadStorageStoreCallCount     int
-		expectedDatabaseInsertCallCount        int
-		expectedDatabaseDeletePendingCallCount int
-		expectError                            bool
+		name                               string
+		payloadStorageErrorAfterCallCount  int
+		databaseErrorAfterInsertCallCount  int
+		expectPayloadStorageStoreCallCount int
+		expectedDatabaseInsertCallCount    int
+		expectedSuccessCount               int
+		expectedFailCount                  int
 	}
 
 	testCases := []caseStruct{
 		{
-			name:                                   "success",
-			payloadStorageErrorAfterCallCount:      2,
-			databaseErrorAfterInsertCallCount:      2,
-			expectPayloadStorageStoreCallCount:     2,
-			expectedDatabaseInsertCallCount:        2,
-			expectedDatabaseDeletePendingCallCount: 0,
-			expectError:                            false,
+			name:                               "all succeed",
+			payloadStorageErrorAfterCallCount:  2,
+			databaseErrorAfterInsertCallCount:  2,
+			expectPayloadStorageStoreCallCount: 2,
+			expectedDatabaseInsertCallCount:    2,
+			expectedSuccessCount:               2,
+			expectedFailCount:                  0,
 		},
 		{
-			name:                                   "payload storage error",
-			payloadStorageErrorAfterCallCount:      0,
-			databaseErrorAfterInsertCallCount:      2,
-			expectPayloadStorageStoreCallCount:     1,
-			expectedDatabaseInsertCallCount:        0,
-			expectedDatabaseDeletePendingCallCount: 0,
-			expectError:                            true,
+			name:                               "payload storage error on first",
+			payloadStorageErrorAfterCallCount:  0,
+			databaseErrorAfterInsertCallCount:  2,
+			expectPayloadStorageStoreCallCount: 2,
+			expectedDatabaseInsertCallCount:    0,
+			expectedSuccessCount:               0,
+			expectedFailCount:                  2,
 		},
 		{
-			name:                                   "database error",
-			payloadStorageErrorAfterCallCount:      2,
-			databaseErrorAfterInsertCallCount:      1,
-			expectPayloadStorageStoreCallCount:     2,
-			expectedDatabaseInsertCallCount:        2,
-			expectedDatabaseDeletePendingCallCount: 1,
-			expectError:                            true,
+			name:                               "payload storage error on second",
+			payloadStorageErrorAfterCallCount:  1,
+			databaseErrorAfterInsertCallCount:  2,
+			expectPayloadStorageStoreCallCount: 2,
+			expectedDatabaseInsertCallCount:    1,
+			expectedSuccessCount:               1,
+			expectedFailCount:                  1,
+		},
+		{
+			name:                               "database error on first",
+			payloadStorageErrorAfterCallCount:  2,
+			databaseErrorAfterInsertCallCount:  0,
+			expectPayloadStorageStoreCallCount: 2,
+			expectedDatabaseInsertCallCount:    2,
+			expectedSuccessCount:               0,
+			expectedFailCount:                  2,
+		},
+		{
+			name:                               "database error on second",
+			payloadStorageErrorAfterCallCount:  2,
+			databaseErrorAfterInsertCallCount:  1,
+			expectPayloadStorageStoreCallCount: 2,
+			expectedDatabaseInsertCallCount:    2,
+			expectedSuccessCount:               1,
+			expectedFailCount:                  1,
 		},
 	}
 
@@ -120,16 +141,90 @@ func TestService_Save(t *testing.T) {
 
 			sut := &Service{payloadStorage: payloadStorage, db: database}
 
-			err := sut.Save(context.TODO(), emailRequests)
+			results := sut.Save(context.TODO(), emailRequests)
+
+			assert.Equal(t, len(emailRequests), len(results))
 			assert.Equal(t, tc.expectPayloadStorageStoreCallCount, payloadStorage.callCount)
 			assert.Equal(t, tc.expectedDatabaseInsertCallCount, database.insertCallCount)
-			assert.Equal(t, tc.expectedDatabaseDeletePendingCallCount, database.deletedCallCount)
 
-			if tc.expectError {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
+			// Count successes and failures
+			successCount := 0
+			failCount := 0
+			for _, result := range results {
+				if result.Success {
+					successCount++
+				} else {
+					failCount++
+					assert.NotEmpty(t, result.ErrorCode)
+				}
 			}
+
+			assert.Equal(t, tc.expectedSuccessCount, successCount)
+			assert.Equal(t, tc.expectedFailCount, failCount)
+		})
+	}
+}
+
+func TestService_Save_ErrorTypes(t *testing.T) {
+	t.Parallel()
+
+	emailRequests := []EmailRequest{
+		{
+			MessageId:    "msg1",
+			PayloadBytes: []byte("test payload 1"),
+		},
+	}
+
+	testCases := []struct {
+		name              string
+		dbError           error
+		expectedErrorCode string
+	}{
+		{
+			name:              "duplicate item error",
+			dbError:           &types.DuplicateItemException{Message: aws.String("Item already exists")},
+			expectedErrorCode: ErrorCodeDuplicatedID,
+		},
+		{
+			name:              "provisioned throughput exceeded error",
+			dbError:           &types.ProvisionedThroughputExceededException{Message: aws.String("Throughput exceeded")},
+			expectedErrorCode: ErrorCodeTransientError,
+		},
+		{
+			name:              "request limit exceeded error",
+			dbError:           &types.RequestLimitExceeded{Message: aws.String("Request limit exceeded")},
+			expectedErrorCode: ErrorCodeTransientError,
+		},
+		{
+			name:              "internal server error",
+			dbError:           &types.InternalServerError{Message: aws.String("Internal server error")},
+			expectedErrorCode: ErrorCodeTransientError,
+		},
+		{
+			name:              "generic database error",
+			dbError:           errors.New("generic error"),
+			expectedErrorCode: ErrorCodeDatabaseError,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			payloadStorage := &payloadStorageMock{errorAfterCallCount: 1}
+			database := &databaseMock{
+				errorAfterInsertCallCount: 0,
+				insertError:               tc.dbError,
+			}
+
+			sut := &Service{payloadStorage: payloadStorage, db: database}
+
+			results := sut.Save(context.TODO(), emailRequests)
+
+			assert.Len(t, results, 1)
+			assert.False(t, results[0].Success)
+			assert.Equal(t, tc.expectedErrorCode, results[0].ErrorCode)
+			assert.NotEmpty(t, results[0].ErrorMessage)
 		})
 	}
 }
