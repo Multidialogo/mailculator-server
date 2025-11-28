@@ -47,6 +47,7 @@ type dynamodbRecord struct {
 	Id         string                 `dynamodbav:"Id"`
 	Status     string                 `dynamodbav:"Status"`
 	Attributes map[string]interface{} `dynamodbav:"Attributes"`
+	TTL        int64                  `dynamodbav:"TTL"`
 }
 
 type EmailDatabaseFacade struct {
@@ -79,7 +80,7 @@ func (edf *EmailDatabaseFacade) unmarshalList(src []map[string]types.AttributeVa
 }
 
 func (edf *EmailDatabaseFacade) Query(ctx context.Context, status string, limit int) ([]EmailTestFixture, error) {
-	query := fmt.Sprintf("SELECT Id, Status, Attributes FROM \"%v\".\"%v\" WHERE Status=? AND Attributes.Latest =?", testEmailTableName, testEmailTableStatusIndex)
+	query := fmt.Sprintf("SELECT Id, Status, Attributes, TTL FROM \"%v\".\"%v\" WHERE Status=? AND Attributes.Latest =?", testEmailTableName, testEmailTableStatusIndex)
 	params, err := attributevalue.MarshalList([]interface{}{testEmailTableStatusMeta, status})
 	if err != nil {
 		return []EmailTestFixture{}, err
@@ -100,7 +101,7 @@ func (edf *EmailDatabaseFacade) Query(ctx context.Context, status string, limit 
 }
 
 func (edf *EmailDatabaseFacade) GetRecord(ctx context.Context, id string, status string) (dynamodbRecord, error) {
-	query := fmt.Sprintf("SELECT Id, Status, Attributes FROM \"%v\" WHERE Id=? AND Status=?", testEmailTableName)
+	query := fmt.Sprintf("SELECT Id, Status, Attributes, TTL FROM \"%v\" WHERE Id=? AND Status=?", testEmailTableName)
 	params, err := attributevalue.MarshalList([]interface{}{id, status})
 	if err != nil {
 		return dynamodbRecord{}, err
@@ -183,9 +184,9 @@ func (edf *EmailDatabaseFacade) InsertEmailWithStatus(ctx context.Context, id st
 	}
 
 	// Insert status record
-	statusStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?, 'Attributes': ?}", testEmailTableName)
-	statusAttrs := map[string]interface{}{"TTL": ttl}
-	statusParams, err := attributevalue.MarshalList([]interface{}{id, latestStatus, statusAttrs})
+	statusStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?, 'Attributes': ?, 'TTL': ?}", testEmailTableName)
+	statusAttrs := map[string]interface{}{}
+	statusParams, err := attributevalue.MarshalList([]interface{}{id, latestStatus, statusAttrs, ttl})
 	if err != nil {
 		return err
 	}

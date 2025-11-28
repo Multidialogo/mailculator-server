@@ -70,9 +70,9 @@ func (db *Database) Insert(ctx context.Context, id string, payloadFilePath strin
 	metaAttrs := db.getMetaAttributes(statusInitial, payloadFilePath, time.Now().Format(time.RFC3339), ttl)
 	metaParams, _ := attributevalue.MarshalList([]interface{}{id, statusMeta, metaAttrs})
 
-	inStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?, 'Attributes': ?}", db.tableName)
-	inAttrs := map[string]interface{}{"TTL": ttl}
-	inParams, _ := attributevalue.MarshalList([]interface{}{id, statusInitial, inAttrs})
+	inStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?, 'Attributes': ?, 'TTL': ?}", db.tableName)
+	inAttrs := map[string]interface{}{}
+	inParams, _ := attributevalue.MarshalList([]interface{}{id, statusInitial, inAttrs, ttl})
 
 	ti := &dynamodb.ExecuteTransactionInput{
 		TransactStatements: []types.ParameterizedStatement{

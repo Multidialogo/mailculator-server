@@ -102,10 +102,9 @@ func TestReadyRecordHasTTL(t *testing.T) {
 	require.Equal(t, testId, readyRecord.Id)
 	require.Equal(t, "ACCEPTED", readyRecord.Status)
 
-	// verify TTL is present in Attributes
-	require.Contains(t, readyRecord.Attributes, "TTL")
-	ttlValue, ok := readyRecord.Attributes["TTL"].(float64)
-	require.True(t, ok, "TTL should be a number")
+	// verify TTL is present in root
+	require.Greater(t, readyRecord.TTL, int64(0))
+	ttlValue := float64(readyRecord.TTL)
 	require.Greater(t, ttlValue, float64(0), "TTL should be greater than 0")
 
 	// verify TTL is in the future (at least current time)
