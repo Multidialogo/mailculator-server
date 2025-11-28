@@ -170,15 +170,14 @@ func (edf *EmailDatabaseFacade) InsertEmailWithStatus(ctx context.Context, id st
 	updatedAt := updatedAtTime.Format(time.RFC3339)
 
 	// Insert _META record
-	metaStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?, 'Attributes': ?}", testEmailTableName)
+	metaStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?, 'Attributes': ?, 'TTL': ?}", testEmailTableName)
 	metaAttrs := map[string]interface{}{
 		"Latest":          latestStatus,
 		"CreatedAt":       createdAt,
 		"UpdatedAt":       updatedAt,
 		"PayloadFilePath": "/test/path/payload.json",
-		"TTL":             ttl,
 	}
-	metaParams, err := attributevalue.MarshalList([]interface{}{id, testEmailTableStatusMeta, metaAttrs})
+	metaParams, err := attributevalue.MarshalList([]interface{}{id, testEmailTableStatusMeta, metaAttrs, ttl})
 	if err != nil {
 		return err
 	}
