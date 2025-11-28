@@ -59,16 +59,15 @@ func (db *Database) getMetaAttributes(status string, payloadFilePath string, cre
 		"CreatedAt":       createdAt,
 		"UpdatedAt":       createdAt,
 		"PayloadFilePath": payloadFilePath,
-		"TTL":             ttl,
 	}
 }
 
 func (db *Database) Insert(ctx context.Context, id string, payloadFilePath string) error {
 	ttl := time.Now().Add(30 * 24 * time.Hour).Unix()
 
-	metaStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?, 'Attributes': ?}", db.tableName)
+	metaStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?, 'Attributes': ?, 'TTL': ?}", db.tableName)
 	metaAttrs := db.getMetaAttributes(statusInitial, payloadFilePath, time.Now().Format(time.RFC3339), ttl)
-	metaParams, _ := attributevalue.MarshalList([]interface{}{id, statusMeta, metaAttrs})
+	metaParams, _ := attributevalue.MarshalList([]interface{}{id, statusMeta, metaAttrs, ttl})
 
 	inStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?, 'Attributes': ?, 'TTL': ?}", db.tableName)
 	inAttrs := map[string]interface{}{}
@@ -245,7 +244,7 @@ func (db *Database) GetInvalidEmails(ctx context.Context) ([]Email, error) {
 
 func (db *Database) RequeueEmail(ctx context.Context, id string) error {
 	// First, get the _META record to check the Latest status
-	getStmt := fmt.Sprintf(`SELECT Id, Status, Attributes FROM "%v" WHERE Id=? AND Status=?`, db.tableName)
+	getStmt := fmt.Sprintf(`SELECT Id, Status, Attributes, TTL FROM "%v" WHERE Id=? AND Status=?`, db.tableName)
 	getParams, err := attributevalue.MarshalList([]interface{}{id, statusMeta})
 	if err != nil {
 		return fmt.Errorf("failed to marshal get parameters: %w", err)
@@ -267,6 +266,7 @@ func (db *Database) RequeueEmail(ctx context.Context, id string) error {
 		Id         string                 `dynamodbav:"Id"`
 		Status     string                 `dynamodbav:"Status"`
 		Attributes map[string]interface{} `dynamodbav:"Attributes"`
+		TTL        int64                  `dynamodbav:"TTL"`
 	}
 
 	if err := attributevalue.UnmarshalMap(getRes.Items[0], &metaRecord); err != nil {
