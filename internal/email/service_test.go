@@ -60,6 +60,10 @@ func (m *databaseMock) RequeueEmail(_ context.Context, _ string) error {
 	return nil
 }
 
+func (m *databaseMock) ScanAndSetTTL(_ context.Context, _ int64, _ int) (*ScanAndSetTTLResult, error) {
+	return &ScanAndSetTTLResult{ProcessedRecords: 0, TotalRecords: 0, HasMoreRecords: false}, nil
+}
+
 func TestService_Save(t *testing.T) {
 	t.Parallel()
 

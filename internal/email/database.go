@@ -314,3 +314,101 @@ func (db *Database) RequeueEmail(ctx context.Context, id string) error {
 
 	return nil
 }
+
+func (db *Database) ScanAndSetTTL(ctx context.Context, ttlTimestamp int64, maxRecords int) (*ScanAndSetTTLResult, error) {
+	// Query for records without both TTL and Attributes.TTL
+	query := fmt.Sprintf(`SELECT Id, Status FROM "%v" WHERE TTL IS MISSING AND Attributes.TTL IS MISSING`, db.tableName)
+
+	var allRecords []struct {
+		Id     string `dynamodbav:"Id"`
+		Status string `dynamodbav:"Status"`
+	}
+
+	// Paginate through all results using NextToken
+	var nextToken *string
+	totalRecords := 0
+	hasMoreRecords := false
+
+	for {
+		if maxRecords > 0 && totalRecords >= maxRecords {
+			hasMoreRecords = true
+			break
+		}
+
+		stmt := &dynamodb.ExecuteStatementInput{
+			Statement: aws.String(query),
+			NextToken: nextToken,
+		}
+
+		res, err := db.dynamo.ExecuteStatement(ctx, stmt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to execute scan statement: %w", err)
+		}
+
+		var records []struct {
+			Id     string `dynamodbav:"Id"`
+			Status string `dynamodbav:"Status"`
+		}
+
+		if err := attributevalue.UnmarshalListOfMaps(res.Items, &records); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal scan records: %w", err)
+		}
+
+		allRecords = append(allRecords, records...)
+		totalRecords += len(records)
+
+		// Check if there are more results
+		if res.NextToken == nil {
+			break
+		}
+		nextToken = res.NextToken
+	}
+
+	// Limit to maxRecords if specified
+	if maxRecords > 0 && len(allRecords) > maxRecords {
+		allRecords = allRecords[:maxRecords]
+		totalRecords = maxRecords
+		hasMoreRecords = true
+	}
+
+	// Process records in microbatches of 25
+	processedRecords := 0
+	batchSize := 25
+
+	for i := 0; i < len(allRecords); i += batchSize {
+		end := i + batchSize
+		if end > len(allRecords) {
+			end = len(allRecords)
+		}
+
+		batch := allRecords[i:end]
+
+		// Create transaction statements for this batch
+		var transactStatements []types.ParameterizedStatement
+		for _, record := range batch {
+			updateStmt := fmt.Sprintf("UPDATE \"%v\" SET TTL=? WHERE Id=? AND Status=?", db.tableName)
+			updateParams, _ := attributevalue.MarshalList([]interface{}{ttlTimestamp, record.Id, record.Status})
+			transactStatements = append(transactStatements, types.ParameterizedStatement{
+				Statement:  aws.String(updateStmt),
+				Parameters: updateParams,
+			})
+		}
+
+		// Execute transaction for this batch
+		ti := &dynamodb.ExecuteTransactionInput{
+			TransactStatements: transactStatements,
+		}
+
+		if _, err := db.dynamo.ExecuteTransaction(ctx, ti); err != nil {
+			return nil, fmt.Errorf("failed to execute update transaction for batch starting at index %d: %w", i, err)
+		}
+
+		processedRecords += len(batch)
+	}
+
+	return &ScanAndSetTTLResult{
+		ProcessedRecords: processedRecords,
+		TotalRecords:     totalRecords,
+		HasMoreRecords:   hasMoreRecords,
+	}, nil
+}
