@@ -35,6 +35,22 @@ func (m *emailServiceMock) Save(_ context.Context, requests []EmailRequest) []Sa
 	return results
 }
 
+func (m *emailServiceMock) GetStaleEmails(_ context.Context) ([]Email, error) {
+	return nil, nil
+}
+
+func (m *emailServiceMock) GetInvalidEmails(_ context.Context) ([]Email, error) {
+	return nil, nil
+}
+
+func (m *emailServiceMock) RequeueEmail(_ context.Context, _ string) error {
+	return nil
+}
+
+func (m *emailServiceMock) ScanAndSetTTL(_ context.Context, _ int64, _ int) (*ScanAndSetTTLResult, error) {
+	return &ScanAndSetTTLResult{ProcessedRecords: 100, TotalRecords: 100, HasMoreRecords: false}, nil
+}
+
 func TestCreateEmailHandler_ServeHTTP(t *testing.T) {
 	t.Parallel()
 
@@ -151,6 +167,67 @@ func TestCreateEmailHandler_ServeHTTP(t *testing.T) {
 
 			assert.Equal(t, tc.expectedStatusCode, response.Code)
 			assert.JSONEq(t, tc.expectedBody, response.Body.String())
+		})
+	}
+}
+
+func TestScanAndSetTTLHandler_ServeHTTP(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name             string
+		requestBody      string
+		expectedStatus   int
+		expectedResponse string
+	}{
+		{
+			name:           "valid request - 200",
+			requestBody:    `{"ttl_timestamp": 1735689600, "max_records": 1000}`,
+			expectedStatus: http.StatusOK,
+			expectedResponse: `{
+				"processed_records": 100,
+				"total_records": 100,
+				"has_more_records": false
+			}`,
+		},
+		{
+			name:             "invalid json - 400",
+			requestBody:      `{"ttl_timestamp": "invalid", "max_records": 1000}`,
+			expectedStatus:   http.StatusBadRequest,
+			expectedResponse: `{"error": "error unmarshalling request body: json: cannot unmarshal string into Go struct field scanAndSetTTLRequest.ttl_timestamp of type int64"}`,
+		},
+		{
+			name:             "validation error - ttl_timestamp too small - 400",
+			requestBody:      `{"ttl_timestamp": 0, "max_records": 1000}`,
+			expectedStatus:   http.StatusBadRequest,
+			expectedResponse: `{"error": "error validating request body: Key: 'scanAndSetTTLRequest.TTLTimestamp' Error:Field validation for 'TTLTimestamp' failed on the 'required' tag"}`,
+		},
+		{
+			name:             "validation error - max_records too small - 400",
+			requestBody:      `{"ttl_timestamp": 1735689600, "max_records": 0}`,
+			expectedStatus:   http.StatusBadRequest,
+			expectedResponse: `{"error": "error validating request body: Key: 'scanAndSetTTLRequest.MaxRecords' Error:Field validation for 'MaxRecords' failed on the 'required' tag"}`,
+		},
+		{
+			name:             "validation error - max_records too large - 400",
+			requestBody:      `{"ttl_timestamp": 1735689600, "max_records": 10001}`,
+			expectedStatus:   http.StatusBadRequest,
+			expectedResponse: `{"error": "error validating request body: Key: 'scanAndSetTTLRequest.MaxRecords' Error:Field validation for 'MaxRecords' failed on the 'max' tag"}`,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodPost, "/scan-and-set-ttl", bytes.NewReader([]byte(tc.requestBody)))
+			response := httptest.NewRecorder()
+
+			service := newEmailServiceMock(nil)
+			sut := NewScanAndSetTTLHandler(service)
+
+			sut.ServeHTTP(response, request)
+
+			assert.Equal(t, tc.expectedStatus, response.Code)
+			assert.JSONEq(t, tc.expectedResponse, response.Body.String())
 		})
 	}
 }

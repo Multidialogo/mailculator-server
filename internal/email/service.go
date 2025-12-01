@@ -44,6 +44,13 @@ type databaseInterface interface {
 	GetStaleEmails(ctx context.Context) ([]Email, error)
 	GetInvalidEmails(ctx context.Context) ([]Email, error)
 	RequeueEmail(ctx context.Context, id string) error
+	ScanAndSetTTL(ctx context.Context, ttlTimestamp int64, maxRecords int) (*ScanAndSetTTLResult, error)
+}
+
+type ScanAndSetTTLResult struct {
+	ProcessedRecords int  `json:"processed_records"`
+	TotalRecords     int  `json:"total_records"`
+	HasMoreRecords   bool `json:"has_more_records"`
 }
 
 type Service struct {
@@ -132,4 +139,8 @@ func (s *Service) GetInvalidEmails(ctx context.Context) ([]Email, error) {
 
 func (s *Service) RequeueEmail(ctx context.Context, id string) error {
 	return s.db.RequeueEmail(ctx, id)
+}
+
+func (s *Service) ScanAndSetTTL(ctx context.Context, ttlTimestamp int64, maxRecords int) (*ScanAndSetTTLResult, error) {
+	return s.db.ScanAndSetTTL(ctx, ttlTimestamp, maxRecords)
 }

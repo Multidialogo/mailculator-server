@@ -49,6 +49,9 @@ func (a *App) NewServer(port int) *http.Server {
 	requeueEmail := email.NewRequeueEmailHandler(a.emailService)
 	mux.Handle("POST /emails/{id}/requeue", requeueEmail)
 
+	scanAndSetTTL := email.NewScanAndSetTTLHandler(a.emailService)
+	mux.Handle("POST /scan-and-set-ttl", scanAndSetTTL)
+
 	health := new(healthcheck.Handler)
 	mux.Handle("GET /health-check", health)
 
