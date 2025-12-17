@@ -92,6 +92,15 @@ jobs:
           echo "image=$ECR_REGISTRY/$IMAGE_NAME:$GITHUB_SHA" >> $GITHUB_OUTPUT
           echo "image-tag=$GITHUB_SHA" >> $GITHUB_OUTPUT
 
+      - name: Inject cross repo shared token
+        working-directory: cdk
+        env:
+          SHARED_TOKEN: ${{ secrets.SHARED_TOKEN }}
+        run: |
+          mv requirements.txt temp_requirements.txt
+          sed -e "s/__SHARED_TOKEN__/${{ secrets.SHARED_TOKEN }}/g" temp_requirements.txt > requirements.txt
+          cat requirements.txt
+
       # Step 5: Deploy updated task definition stack
       - name: Deploy CDK Stack
         continue-on-error: false
