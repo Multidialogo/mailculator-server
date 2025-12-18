@@ -245,7 +245,6 @@ class TaskDefinitionStack(Stack):
             id='dd-api-key-secret',
             secret_name=dd_api_key_secret_name,
         )
-        dd_api_key_secret.grant_read(task_definition.obtain_execution_role)
 
         datadog_container = task_definition.add_container(
             id='datadog-container',
