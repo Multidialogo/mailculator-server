@@ -15,6 +15,7 @@ if __name__ == "__main__":
 
     selected_environment = app.node.try_get_context('environment')
     image_tag = app.node.try_get_context('image_tag')
+    dd_api_key_secret_name = app.node.try_get_context('dd_api_key_secret_name')
 
     env_parameters = GetEnvVariables(selected_environment).env_dict
 

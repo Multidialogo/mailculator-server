@@ -62,7 +62,6 @@ jobs:
             echo "MD_REST_ACCESS_POINT_ARN_PARAMETER_NAME=${{ vars.PROD_MD_REST_ACCESS_POINT_ARN_PARAMETER_NAME }}" >> $GITHUB_ENV
             echo "TASK_DEFINITION_ARN_PARAMETER_NAME=${{ vars.PROD_TASK_DEFINITION_ARN_PARAMETER_NAME }}" >> $GITHUB_ENV
             echo "TMP_TASK_DEFINITION_ARN_PARAMETER_NAME=${{ vars.PROD_TMP_TASK_DEFINITION_ARN_PARAMETER_NAME }}" >> $GITHUB_ENV
-            echo "DD_API_KEY_SECRET_NAME=${{ secrets.PROD_DD_API_KEY_SECRET_NAME }}" >> $GITHUB_ENV
           elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
             echo "ENVIRONMENT=stage" >> $GITHUB_ENV
             echo "SERVICE_CPU=${{ vars.STAGE_SERVICE_CPU }}" >> $GITHUB_ENV
@@ -77,7 +76,6 @@ jobs:
             echo "MD_REST_ACCESS_POINT_ARN_PARAMETER_NAME=${{ vars.STAGE_MD_REST_ACCESS_POINT_ARN_PARAMETER_NAME }}" >> $GITHUB_ENV
             echo "TASK_DEFINITION_ARN_PARAMETER_NAME=${{ vars.STAGE_TASK_DEFINITION_ARN_PARAMETER_NAME }}" >> $GITHUB_ENV
             echo "TMP_TASK_DEFINITION_ARN_PARAMETER_NAME=${{ vars.STAGE_TMP_TASK_DEFINITION_ARN_PARAMETER_NAME }}" >> $GITHUB_ENV
-            echo "DD_API_KEY_SECRET_NAME=${{ secrets.STAGE_DD_API_KEY_SECRET_NAME }}" >> $GITHUB_ENV
           fi
           echo "IMAGE_TAG=${{ github.sha }}" >> $GITHUB_ENV
     outputs:
@@ -94,7 +92,6 @@ jobs:
       MD_REST_ACCESS_POINT_ARN_PARAMETER_NAME: ${{ env.MD_REST_ACCESS_POINT_ARN_PARAMETER_NAME }}
       TASK_DEFINITION_ARN_PARAMETER_NAME: ${{ env.TASK_DEFINITION_ARN_PARAMETER_NAME }}
       TMP_TASK_DEFINITION_ARN_PARAMETER_NAME: ${{ env.TMP_TASK_DEFINITION_ARN_PARAMETER_NAME }}
-      DD_API_KEY_SECRET_NAME: ${{ env.DD_API_KEY_SECRET_NAME }}
       IMAGE_TAG: ${{ env.IMAGE_TAG }}
       IMAGE_NAME: ${{ env.ENVIRONMENT }}-${{ env.SERVICE_NAME }}
 
@@ -149,7 +146,6 @@ jobs:
       MD_REST_EFS_ID_PARAMETER_NAME: ${{ needs.set-environment-variables.outputs.MD_REST_EFS_ID_PARAMETER_NAME }}
       MD_REST_ACCESS_POINT_ID_PARAMETER_NAME: ${{ needs.set-environment-variables.outputs.MD_REST_ACCESS_POINT_ID_PARAMETER_NAME }}
       MD_REST_ACCESS_POINT_ARN_PARAMETER_NAME: ${{ needs.set-environment-variables.outputs.MD_REST_ACCESS_POINT_ARN_PARAMETER_NAME }}
-      DD_API_KEY_SECRET_NAME: ${{ needs.set-environment-variables.outputs.DD_API_KEY_SECRET_NAME }}
     runs-on: ubuntu-latest
     needs:
       - fetch-ecr-password
@@ -192,6 +188,7 @@ jobs:
           pip install -r requirements.txt
           cdk deploy -c environment=${{ env.ENVIRONMENT }} \
           -c image_tag=${{ env.IMAGE_TAG }} \
+          -c dd_api_key_secret_name=${{ ( env.ENVIRONMENT == 'prod' ) && secrets.PROD_DD_API_KEY_SECRET_NAME || secrets.STAGE_DD_API_KEY_SECRET_NAME }} \
           --require-approval never \
           --all
 
