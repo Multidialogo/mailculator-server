@@ -29,7 +29,8 @@ if __name__ == "__main__":
         f"{env_parameters['SELECTED_ENVIRONMENT']}-multicarrier-email-api-task-definition-stack",
         env_parameters=env_parameters,
         image_tag=image_tag,
-        env=environment
+        env=environment,
+        dd_api_key_secret_name=dd_api_key_secret_name
     )
 
     Tags.of(app).add('env', selected_environment)
