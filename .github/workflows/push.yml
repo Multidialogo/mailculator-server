@@ -21,9 +21,29 @@ env:
   MD_REST_EFS_FOLDER_NAME: ${{ vars.MD_REST_EFS_FOLDER_NAME }}
   SERVICE_CONTAINER_PORT: ${{ vars.SERVICE_CONTAINER_PORT }}
   SERVICE_HOST_PORT: ${{ vars.SERVICE_HOST_PORT }}
+  AWS_REGION: eu-west-1
 
 jobs:
-  build:
+
+  fetch-ecr-password:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.OIDC_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - id: get-ecr-pw
+        run: |
+          echo "ECR_PW=$(aws ecr get-login-password --region ${{ env.AWS_REGION }} --output text)" >> "$GITHUB_OUTPUT"
+    outputs:
+      ECR_PW: ${{ steps.get-ecr-pw.outputs.ecr_pw }}
+
+  set-environment-variables:
     runs-on: ubuntu-latest
     steps:
       - name: Select Environment
@@ -59,38 +79,84 @@ jobs:
             echo "TMP_TASK_DEFINITION_ARN_PARAMETER_NAME=${{ vars.STAGE_TMP_TASK_DEFINITION_ARN_PARAMETER_NAME }}" >> $GITHUB_ENV
             echo "DD_API_KEY_SECRET_NAME=${{ secrets.STAGE_DD_API_KEY_SECRET_NAME }}" >> $GITHUB_ENV
           fi
-          
+          echo "IMAGE_TAG=${{ github.sha }}" >> $GITHUB_ENV
+    outputs:
+      ENVIRONMENT: ${{ env.ENVIRONMENT }}
+      SERVICE_CPU: ${{ env.SERVICE_CPU }}
+      SERVICE_MEMORY: ${{ env.SERVICE_MEMORY }}
+      OUTBOX_TABLE_NAME_PARAMETER_NAME: ${{ env.OUTBOX_TABLE_NAME_PARAMETER_NAME }}
+      MC_EML_EFS_ACCESS_POINT_ARN_PARAMETER_NAME: ${{ env.MC_EML_EFS_ACCESS_POINT_ARN_PARAMETER_NAME }}
+      MC_EML_EFS_ACCESS_POINT_ID_PARAMETER_NAME: ${{ env.MC_EML_EFS_ACCESS_POINT_ID_PARAMETER_NAME }}
+      MC_EML_EFS_ID_PARAMETER_NAME: ${{ env.MC_EML_EFS_ID_PARAMETER_NAME }}
+      REPOSITORY_NAME_PARAMETER_NAME: ${{ env.REPOSITORY_NAME_PARAMETER_NAME }}
+      MD_REST_EFS_ID_PARAMETER_NAME: ${{ env.MD_REST_EFS_ID_PARAMETER_NAME }}
+      MD_REST_ACCESS_POINT_ID_PARAMETER_NAME: ${{ env.MD_REST_ACCESS_POINT_ID_PARAMETER_NAME }}
+      MD_REST_ACCESS_POINT_ARN_PARAMETER_NAME: ${{ env.MD_REST_ACCESS_POINT_ARN_PARAMETER_NAME }}
+      TASK_DEFINITION_ARN_PARAMETER_NAME: ${{ env.TASK_DEFINITION_ARN_PARAMETER_NAME }}
+      TMP_TASK_DEFINITION_ARN_PARAMETER_NAME: ${{ env.TMP_TASK_DEFINITION_ARN_PARAMETER_NAME }}
+      DD_API_KEY_SECRET_NAME: ${{ env.DD_API_KEY_SECRET_NAME }}
+      IMAGE_TAG: ${{ env.IMAGE_TAG }}
+      IMAGE_NAME: ${{ env.ENVIRONMENT }}-${{ env.SERVICE_NAME }}
 
-      # Step 1: Checkout the repository
+  build_image:
+    env:
+      IMAGE_TAG: ${{ needs.set-environment-variables.outputs.IMAGE_TAG }}
+      IMAGE_NAME: ${{ needs.set-environment-variables.outputs.IMAGE_NAME }}
+    runs-on: ubuntu-latest
+    needs:
+      - set-environment-variables
+    steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Step 2: Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.OIDC_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      # Step 3: Login to ECR registry
       - name: Login ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # Step 4: Build & push image
       - name: Image build
         continue-on-error: false
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_NAME: ${{ env.ENVIRONMENT }}-${{ env.SERVICE_NAME }}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
         run: |
           docker build -t "$IMAGE_NAME:latest" -f Dockerfile .
           docker tag $IMAGE_NAME:latest $ECR_REGISTRY/$IMAGE_NAME:latest
-          docker tag $IMAGE_NAME:latest $ECR_REGISTRY/$IMAGE_NAME:$GITHUB_SHA
+          docker tag $IMAGE_NAME:latest $ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG
           docker push $ECR_REGISTRY/$IMAGE_NAME --all-tags
-          echo "image=$ECR_REGISTRY/$IMAGE_NAME:$GITHUB_SHA" >> $GITHUB_OUTPUT
-          echo "image-tag=$GITHUB_SHA" >> $GITHUB_OUTPUT
+
+  deploy-cdk:
+    env:
+      ENVIRONMENT: ${{ needs.set-environment-variables.outputs.ENVIRONMENT }}
+      IMAGE_NAME: ${{ needs.set-environment-variables.outputs.IMAGE_NAME }}
+      IMAGE_TAG: ${{ needs.set-environment-variables.outputs.IMAGE_TAG }}
+      TMP_TASK_DEFINITION_ARN_PARAMETER_NAME: ${{ needs.set-environment-variables.outputs.TMP_TASK_DEFINITION_ARN_PARAMETER_NAME }}
+      TASK_DEFINITION_ARN_PARAMETER_NAME: ${{ needs.set-environment-variables.outputs.TASK_DEFINITION_ARN_PARAMETER_NAME }}
+    runs-on: ubuntu-latest
+    needs:
+      - fetch-ecr-password
+      - set-environment-variables
+    container:
+      image: 775826427925.dkr.ecr.eu-south-1.amazonaws.com/alpine-cdk-runner:495a3b3b6596e93edb9ff6f962d846d4d7d2777b
+      credentials:
+        username: AWS
+        password: ${{ needs.fetch-ecr-password.outputs.ECR_PW }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.OIDC_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: Inject cross repo shared token
         working-directory: cdk
@@ -101,17 +167,22 @@ jobs:
           sed -e "s/__SHARED_TOKEN__/${{ secrets.SHARED_TOKEN }}/g" temp_requirements.txt > requirements.txt
           cat requirements.txt
 
-      # Step 5: Deploy updated task definition stack
-      - name: Deploy CDK Stack
-        continue-on-error: false
-        uses: arnaskro/aws-cdk-v2-github-actions@v2.3.0
-        with:
-          cdk_subcommand: 'deploy'
-          cdk_args: '-c environment=${{ env.ENVIRONMENT }} -c image_tag=${{ steps.build-image.outputs.image-tag }} --require-approval never'
-          actions_comment: false
-          working_dir: cdk
+      - name: Set CDK environment variables
+        run: |
+          echo "CDK_DEFAULT_ACCOUNT=$(aws sts get-caller-identity --query Account --output text)" >> $GITHUB_ENV
+          echo "CDK_DEFAULT_REGION=${{ vars.AWS_REGION }}" >> $GITHUB_ENV
 
-      # Step 6: Retrieve updated temporary task definition arn
+      - name: Deploy CDK Stack
+        working-directory: cdk
+        run: |
+          python3 -m venv venv
+          . venv/bin/activate
+          pip install -r requirements.txt
+          cdk deploy -c environment=${{ env.ENVIRONMENT }} \
+          -c image_tag=${{ env.IMAGE_TAG }} \
+          --require-approval never \
+          --all
+
       - name: Retrieve image updated task definition
         continue-on-error: false
         id: get-tmp-task-definition
@@ -119,7 +190,6 @@ jobs:
           TMP_TASK_DEFINITION_ARN=$(aws ssm get-parameter --name ${{ env.TMP_TASK_DEFINITION_ARN_PARAMETER_NAME }} --query Parameter.Value --output text)
           echo "task-definition-arn=$TMP_TASK_DEFINITION_ARN" >> $GITHUB_OUTPUT
 
-      # Step 7: Deploy new task definition and wait for service to be stable
       - name: Deploy task definition
         id: task-definition-deploy
         run: |
@@ -131,7 +201,6 @@ jobs:
           --cluster ${{ env.ENVIRONMENT }} \
           --services ${{ env.SERVICE_NAME }}
 
-      # Step 8a: Update task definition ssm parameter if the deployment succeeds
       - name: Update the task definition ssm parameter
         if: ${{ steps.task-definition-deploy.outcome == 'success' }}
         continue-on-error: false
@@ -142,7 +211,6 @@ jobs:
           --type String \
           --overwrite
 
-      # Step 8b: Deregister the task definition if the deployment fails
       - name: Delete task definition if deploy fails
         if: ${{ steps.task-definition-deploy.outcome == 'failure' }}
         run: |
