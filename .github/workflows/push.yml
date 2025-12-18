@@ -139,6 +139,17 @@ jobs:
       IMAGE_TAG: ${{ needs.set-environment-variables.outputs.IMAGE_TAG }}
       TMP_TASK_DEFINITION_ARN_PARAMETER_NAME: ${{ needs.set-environment-variables.outputs.TMP_TASK_DEFINITION_ARN_PARAMETER_NAME }}
       TASK_DEFINITION_ARN_PARAMETER_NAME: ${{ needs.set-environment-variables.outputs.TASK_DEFINITION_ARN_PARAMETER_NAME }}
+      SERVICE_CPU: ${{ needs.set-environment-variables.outputs.SERVICE_CPU }}
+      SERVICE_MEMORY: ${{ needs.set-environment-variables.outputs.SERVICE_MEMORY }}
+      OUTBOX_TABLE_NAME_PARAMETER_NAME: ${{ needs.set-environment-variables.outputs.OUTBOX_TABLE_NAME_PARAMETER_NAME }}
+      MC_EML_EFS_ACCESS_POINT_ARN_PARAMETER_NAME: ${{ needs.set-environment-variables.outputs.MC_EML_EFS_ACCESS_POINT_ARN_PARAMETER_NAME }}
+      MC_EML_EFS_ACCESS_POINT_ID_PARAMETER_NAME: ${{ needs.set-environment-variables.outputs.MC_EML_EFS_ACCESS_POINT_ID_PARAMETER_NAME }}
+      MC_EML_EFS_ID_PARAMETER_NAME: ${{ needs.set-environment-variables.outputs.MC_EML_EFS_ID_PARAMETER_NAME }}
+      REPOSITORY_NAME_PARAMETER_NAME: ${{ needs.set-environment-variables.outputs.REPOSITORY_NAME_PARAMETER_NAME }}
+      MD_REST_EFS_ID_PARAMETER_NAME: ${{ needs.set-environment-variables.outputs.MD_REST_EFS_ID_PARAMETER_NAME }}
+      MD_REST_ACCESS_POINT_ID_PARAMETER_NAME: ${{ needs.set-environment-variables.outputs.MD_REST_ACCESS_POINT_ID_PARAMETER_NAME }}
+      MD_REST_ACCESS_POINT_ARN_PARAMETER_NAME: ${{ needs.set-environment-variables.outputs.MD_REST_ACCESS_POINT_ARN_PARAMETER_NAME }}
+      DD_API_KEY_SECRET_NAME: ${{ needs.set-environment-variables.outputs.DD_API_KEY_SECRET_NAME }}
     runs-on: ubuntu-latest
     needs:
       - fetch-ecr-password

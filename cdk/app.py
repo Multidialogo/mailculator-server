@@ -12,7 +12,10 @@ if __name__ == "__main__":
 
     env_parameters = GetEnvVariables(selected_environment).env_dict
 
-    environment = Environment(account=env_parameters['ACCOUNT_ID'], region=env_parameters['AWS_REGION'])
+    account = environ.get('CDK_DEFAULT_ACCOUNT')
+    region = environ.get('CDK_DEFAULT_REGION')
+
+    environment = Environment(account=account, region=region)
 
     TaskDefinitionStack(
         app,
