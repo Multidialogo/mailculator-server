@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-from aws_cdk import App, Environment, Tags
+from aws_cdk import (
+    App,
+    Environment,
+    Tags
+)
+
+from os import environ
 
 from get_env_variables import GetEnvVariables
 from task_definition_stack import TaskDefinitionStack
