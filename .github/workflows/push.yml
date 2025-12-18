@@ -98,7 +98,7 @@ jobs:
       IMAGE_TAG: ${{ env.IMAGE_TAG }}
       IMAGE_NAME: ${{ env.ENVIRONMENT }}-${{ env.SERVICE_NAME }}
 
-  build_image:
+  build-image:
     env:
       IMAGE_TAG: ${{ needs.set-environment-variables.outputs.IMAGE_TAG }}
       IMAGE_NAME: ${{ needs.set-environment-variables.outputs.IMAGE_NAME }}
@@ -143,8 +143,9 @@ jobs:
     needs:
       - fetch-ecr-password
       - set-environment-variables
+      - build-image
     container:
-      image: 775826427925.dkr.ecr.eu-south-1.amazonaws.com/alpine-cdk-runner:495a3b3b6596e93edb9ff6f962d846d4d7d2777b
+      image: 823598220965.dkr.ecr.eu-west-1.amazonaws.com/alpine-cdk-runner:0ce104344ee2d098f181b1d785bfa55fa68b6e9f
       credentials:
         username: AWS
         password: ${{ needs.fetch-ecr-password.outputs.ECR_PW }}
