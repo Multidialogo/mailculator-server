@@ -61,12 +61,21 @@ class TaskDefinitionStack(Stack):
             parameter_name=md_rest_access_point_arn_parameter_name
         )
 
+        task_execution_role = iam.Role(
+            scope=self,
+            id='execution-role',
+            assumed_by=iam.ServicePrincipal(
+                'ecs-tasks.amazonaws.com'
+            )
+        )
+
         task_definition = ecs.FargateTaskDefinition(
             scope=self,
             id=f'{service_name}-task-definition',
             cpu=int(service_cpu),
             family=task_definition_family,
-            memory_limit_mib=int(service_memory)
+            memory_limit_mib=int(service_memory),
+            execution_role=task_execution_role
         )
 
         task_definition.apply_removal_policy(
@@ -245,7 +254,7 @@ class TaskDefinitionStack(Stack):
             id='dd-api-key-secret',
             secret_name=dd_api_key_secret_name,
         )
-        dd_api_key_secret.grant_read(task_definition.task_role)
+        dd_api_key_secret.grant_read(task_execution_role)
 
         datadog_container = task_definition.add_container(
             id='datadog-container',
