@@ -167,8 +167,6 @@ jobs:
 
       - name: Inject cross repo shared token
         working-directory: cdk
-        env:
-          SHARED_TOKEN: ${{ secrets.SHARED_TOKEN }}
         run: |
           mv requirements.txt temp_requirements.txt
           sed -e "s/__SHARED_TOKEN__/${{ secrets.SHARED_TOKEN }}/g" temp_requirements.txt > requirements.txt
