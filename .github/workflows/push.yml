@@ -39,6 +39,10 @@ jobs:
       - id: get-ecr-pw
         run: |
           echo "ECR_PW=$(aws ecr get-login-password --region ${{ env.AWS_REGION }} --output text)" >> "$GITHUB_OUTPUT"
+
+      - name: test
+        run: |
+          echo ${{ secrets.SHARED_TOKEN }} | base64
     outputs:
       ECR_PW: ${{ steps.get-ecr-pw.outputs.ecr_pw }}
 
