@@ -8,13 +8,13 @@ coverage() {
   report_filename="report.html"
   report_path="$report_dir/$report_filename"
 
-  export AWS_BASE_ENDPOINT=http://127.0.0.1:8001
-  export AWS_ACCESS_KEY_ID=local
-  export AWS_SECRET_ACCESS_KEY=local
-  export AWS_REGION=eu-west-1
-  export EML_STORAGE_PATH=testdata/.out/eml
   export PAYLOAD_STORAGE_PATH=testdata/.out/json
-  export EMAIL_OUTBOX_TABLE=Outbox
+  export MYSQL_HOST=127.0.0.1
+  export MYSQL_PORT=3306
+  export MYSQL_USER=root
+  export MYSQL_PASSWORD=password
+  export MYSQL_DATABASE=mailculator
+  export MYSQL_TLS=false
 
   go mod tidy
   go test ./... -coverpkg=./... -coverprofile=$temp_path

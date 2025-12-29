@@ -1,7 +1,6 @@
 package config
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"os"
@@ -9,14 +8,16 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/go-playground/validator/v10"
 )
 
-type AwsConfig struct {
-	BaseEndpoint string `yaml:"base-endpoint"`
-	sdkConfig    aws.Config
+type MySQLConfig struct {
+	Host     string `yaml:"host" validate:"required"`
+	Port     int    `yaml:"port" validate:"required"`
+	User     string `yaml:"user" validate:"required"`
+	Password string `yaml:"password" validate:"required"`
+	Database string `yaml:"database" validate:"required"`
+	TLS      string `yaml:"tls" validate:"required"`
 }
 
 type PayloadStorageConfig struct {
@@ -24,8 +25,7 @@ type PayloadStorageConfig struct {
 }
 
 type OutboxConfig struct {
-	TableName                   string `yaml:"table-name" validate:"required"`
-	StaleEmailsThresholdMinutes int    `yaml:"stale-emails-threshold-minutes" validate:"required"`
+	StaleEmailsThresholdMinutes int `yaml:"stale-emails-threshold-minutes" validate:"required"`
 }
 
 type ServerConfig struct {
@@ -33,7 +33,7 @@ type ServerConfig struct {
 }
 
 type Config struct {
-	Aws            AwsConfig            `yaml:"aws,flow"`
+	MySQL          MySQLConfig          `yaml:"mysql,flow" validate:"required"`
 	PayloadStorage PayloadStorageConfig `yaml:"payload-storage,flow" validate:"required"`
 	Outbox         OutboxConfig         `yaml:"outbox,flow" validate:"required"`
 	Server         ServerConfig         `yaml:"server,flow" validate:"required"`
@@ -69,29 +69,22 @@ func (c *Config) Load(r io.Reader) error {
 		return err
 	}
 
-	awsConfig, err := config.LoadDefaultConfig(context.TODO())
-	if err != nil {
-		return err
-	}
-
-	if c.Aws.BaseEndpoint != "" {
-		awsConfig.BaseEndpoint = aws.String(c.Aws.BaseEndpoint)
-	}
-
-	c.Aws.sdkConfig = awsConfig
 	return nil
 }
 
-func (c *Config) GetAwsConfig() aws.Config {
-	return c.Aws.sdkConfig
+func (c *Config) GetMySQLDSN() string {
+	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true&tls=%s",
+		c.MySQL.User,
+		c.MySQL.Password,
+		c.MySQL.Host,
+		c.MySQL.Port,
+		c.MySQL.Database,
+		c.MySQL.TLS,
+	)
 }
 
 func (c *Config) GetPayloadStoragePath() string {
 	return c.PayloadStorage.Path
-}
-
-func (c *Config) GetOutboxTableName() string {
-	return c.Outbox.TableName
 }
 
 func (c *Config) GetStaleEmailsThresholdMinutes() int {

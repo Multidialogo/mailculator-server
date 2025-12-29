@@ -5,8 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -58,10 +57,6 @@ func (m *databaseMock) GetInvalidEmails(_ context.Context) ([]Email, error) {
 
 func (m *databaseMock) RequeueEmail(_ context.Context, _ string) error {
 	return nil
-}
-
-func (m *databaseMock) ScanAndSetTTL(_ context.Context, _ int64, _ int) (*ScanAndSetTTLResult, error) {
-	return &ScanAndSetTTLResult{ProcessedRecords: 0, TotalRecords: 0, HasMoreRecords: false}, nil
 }
 
 func TestService_Save(t *testing.T) {
@@ -185,24 +180,9 @@ func TestService_Save_ErrorTypes(t *testing.T) {
 		expectedErrorCode string
 	}{
 		{
-			name:              "duplicate item error",
-			dbError:           &types.DuplicateItemException{Message: aws.String("Item already exists")},
+			name:              "duplicate entry error",
+			dbError:           &mysql.MySQLError{Number: 1062, Message: "Duplicate entry"},
 			expectedErrorCode: ErrorCodeDuplicatedID,
-		},
-		{
-			name:              "provisioned throughput exceeded error",
-			dbError:           &types.ProvisionedThroughputExceededException{Message: aws.String("Throughput exceeded")},
-			expectedErrorCode: ErrorCodeTransientError,
-		},
-		{
-			name:              "request limit exceeded error",
-			dbError:           &types.RequestLimitExceeded{Message: aws.String("Request limit exceeded")},
-			expectedErrorCode: ErrorCodeTransientError,
-		},
-		{
-			name:              "internal server error",
-			dbError:           &types.InternalServerError{Message: aws.String("Internal server error")},
-			expectedErrorCode: ErrorCodeTransientError,
 		},
 		{
 			name:              "generic database error",
