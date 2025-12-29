@@ -1,8 +1,15 @@
+mysql:
+  host: "localhost"
+  port: 3306
+  user: "root"
+  password: "password"
+  database: "mailculator"
+  tls: "false"
+
 payload-storage:
   path: "/efs/json"
 
 outbox:
-  table-name: "Outbox"
   stale-emails-threshold-minutes: 30
 
 server:

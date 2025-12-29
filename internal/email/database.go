@@ -2,13 +2,11 @@ package email
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/go-sql-driver/mysql"
 )
 
 const (
@@ -27,9 +25,7 @@ const (
 )
 
 const (
-	statusMeta    = StatusMeta
-	statusInitial = StatusAccepted
-
+	statusInitial               = StatusAccepted
 	statusIntaking              = StatusIntaking
 	statusProcessing            = StatusProcessing
 	statusCallingSentCallback   = StatusCallingSentCallback
@@ -39,248 +35,146 @@ const (
 	statusFailed                = StatusFailed
 )
 
+// MySQL error codes
+const (
+	mysqlDuplicateEntryCode = 1062
+)
+
 type Database struct {
-	dynamo                      *dynamodb.Client
-	tableName                   string
+	db                          *sql.DB
 	staleEmailsThresholdMinutes int
 }
 
-func NewDatabase(dynamo *dynamodb.Client, tableName string, staleEmailsThresholdMinutes int) *Database {
+func NewDatabase(db *sql.DB, staleEmailsThresholdMinutes int) *Database {
 	return &Database{
-		dynamo:                      dynamo,
-		tableName:                   tableName,
+		db:                          db,
 		staleEmailsThresholdMinutes: staleEmailsThresholdMinutes,
 	}
 }
 
-func (db *Database) getMetaAttributes(status string, payloadFilePath string, createdAt string, ttl int64) map[string]interface{} {
-	return map[string]interface{}{
-		"Latest":          status,
-		"CreatedAt":       createdAt,
-		"UpdatedAt":       createdAt,
-		"PayloadFilePath": payloadFilePath,
+func (d *Database) Insert(ctx context.Context, id string, payloadFilePath string) error {
+	tx, err := d.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-}
+	defer tx.Rollback()
 
-func (db *Database) Insert(ctx context.Context, id string, payloadFilePath string) error {
-	ttl := time.Now().Add(30 * 24 * time.Hour).Unix()
-
-	metaStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?, 'Attributes': ?, 'TTL': ?}", db.tableName)
-	metaAttrs := db.getMetaAttributes(statusInitial, payloadFilePath, time.Now().Format(time.RFC3339), ttl)
-	metaParams, _ := attributevalue.MarshalList([]interface{}{id, statusMeta, metaAttrs, ttl})
-
-	inStmt := fmt.Sprintf("INSERT INTO \"%v\" VALUE {'Id': ?, 'Status': ?, 'Attributes': ?, 'TTL': ?}", db.tableName)
-	inAttrs := map[string]interface{}{}
-	inParams, _ := attributevalue.MarshalList([]interface{}{id, statusInitial, inAttrs, ttl})
-
-	ti := &dynamodb.ExecuteTransactionInput{
-		TransactStatements: []types.ParameterizedStatement{
-			{Statement: aws.String(metaStmt), Parameters: metaParams},
-			{Statement: aws.String(inStmt), Parameters: inParams},
-		},
+	// Insert into emails table
+	_, err = tx.ExecContext(ctx,
+		`INSERT INTO emails (id, status, payload_file_path, version) VALUES (?, ?, ?, 1)`,
+		id, statusInitial, payloadFilePath,
+	)
+	if err != nil {
+		return err
 	}
 
-	_, err := db.dynamo.ExecuteTransaction(ctx, ti)
-	return err
+	// Insert initial status into email_statuses
+	_, err = tx.ExecContext(ctx,
+		`INSERT INTO email_statuses (email_id, status) VALUES (?, ?)`,
+		id, statusInitial,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to insert status history: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
 }
 
-func (db *Database) GetStaleEmails(ctx context.Context) ([]Email, error) {
-	thresholdTime := time.Now().Add(-time.Duration(db.staleEmailsThresholdMinutes) * time.Minute)
-	thresholdStr := thresholdTime.Format(time.RFC3339)
+func (d *Database) GetStaleEmails(ctx context.Context) ([]Email, error) {
+	thresholdTime := time.Now().Add(-time.Duration(d.staleEmailsThresholdMinutes) * time.Minute)
 
-	// Query for stale emails with Latest in (INTAKING, PROCESSING, CALLING-SENT-CALLBACK, CALLING-FAILED-CALLBACK)
-	query := fmt.Sprintf(`SELECT Id, Status, Attributes.Latest, Attributes.CreatedAt, Attributes.UpdatedAt 
-		FROM "%v" 
-		WHERE Status=? 
-		AND (Attributes.Latest=? OR Attributes.Latest=? OR Attributes.Latest=? OR Attributes.Latest=?)
-		AND Attributes.UpdatedAt < ?`,
-		db.tableName)
-
-	params, err := attributevalue.MarshalList([]interface{}{
-		statusMeta,
+	rows, err := d.db.QueryContext(ctx,
+		`SELECT id, status, created_at, updated_at 
+		FROM emails 
+		WHERE status IN (?, ?, ?, ?) 
+		AND updated_at < ?`,
 		statusIntaking,
 		statusProcessing,
 		statusCallingSentCallback,
 		statusCallingFailedCallback,
-		thresholdStr,
-	})
+		thresholdTime,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal parameters: %w", err)
+		return nil, fmt.Errorf("failed to query stale emails: %w", err)
+	}
+	defer rows.Close()
+
+	var emails []Email
+	for rows.Next() {
+		var e Email
+		if err := rows.Scan(&e.Id, &e.Status, &e.CreatedAt, &e.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("failed to scan email row: %w", err)
+		}
+		emails = append(emails, e)
 	}
 
-	var allRecords []struct {
-		Id         string                 `dynamodbav:"Id"`
-		Status     string                 `dynamodbav:"Status"`
-		Attributes map[string]interface{} `dynamodbav:"Attributes"`
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating email rows: %w", err)
 	}
 
-	// Paginate through all results using NextToken
-	var nextToken *string
-	for {
-		stmt := &dynamodb.ExecuteStatementInput{
-			Statement:  aws.String(query),
-			Parameters: params,
-			NextToken:  nextToken,
-		}
-
-		res, err := db.dynamo.ExecuteStatement(ctx, stmt)
-		if err != nil {
-			return nil, fmt.Errorf("failed to execute statement: %w", err)
-		}
-
-		var records []struct {
-			Id         string                 `dynamodbav:"Id"`
-			Status     string                 `dynamodbav:"Status"`
-			Attributes map[string]interface{} `dynamodbav:"Attributes"`
-		}
-
-		if err := attributevalue.UnmarshalListOfMaps(res.Items, &records); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal records: %w", err)
-		}
-
-		allRecords = append(allRecords, records...)
-
-		// Check if there are more results
-		if res.NextToken == nil {
-			break
-		}
-		nextToken = res.NextToken
-	}
-
-	staleEmails := make([]Email, 0, len(allRecords))
-	for _, record := range allRecords {
-		latest, _ := record.Attributes["Latest"].(string)
-		createdAtStr, _ := record.Attributes["CreatedAt"].(string)
-		updatedAtStr, _ := record.Attributes["UpdatedAt"].(string)
-
-		createdAt, _ := time.Parse(time.RFC3339, createdAtStr)
-		updatedAt, _ := time.Parse(time.RFC3339, updatedAtStr)
-
-		staleEmails = append(staleEmails, Email{
-			Id:        record.Id,
-			Status:    latest, // Map Latest to Status as per requirements
-			CreatedAt: createdAt,
-			UpdatedAt: updatedAt,
-		})
-	}
-
-	return staleEmails, nil
+	return emails, nil
 }
 
-func (db *Database) GetInvalidEmails(ctx context.Context) ([]Email, error) {
-	query := fmt.Sprintf(`SELECT Id, Status, Attributes
-		FROM "%v"
-		WHERE Status=?
-		AND Attributes.Latest=?`,
-		db.tableName)
-
-	params, err := attributevalue.MarshalList([]interface{}{
-		StatusMeta,
+func (d *Database) GetInvalidEmails(ctx context.Context) ([]Email, error) {
+	rows, err := d.db.QueryContext(ctx,
+		`SELECT id, status, reason, created_at, updated_at 
+		FROM emails 
+		WHERE status = ?`,
 		StatusInvalid,
-	})
+	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal parameters: %w", err)
+		return nil, fmt.Errorf("failed to query invalid emails: %w", err)
+	}
+	defer rows.Close()
+
+	var emails []Email
+	for rows.Next() {
+		var e Email
+		var reason sql.NullString
+		if err := rows.Scan(&e.Id, &e.Status, &reason, &e.CreatedAt, &e.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("failed to scan email row: %w", err)
+		}
+		if reason.Valid {
+			e.ErrorMessage = reason.String
+		}
+		emails = append(emails, e)
 	}
 
-	var allRecords []struct {
-		Id         string                 `dynamodbav:"Id"`
-		Status     string                 `dynamodbav:"Status"`
-		Attributes map[string]interface{} `dynamodbav:"Attributes"`
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating email rows: %w", err)
 	}
 
-	// Paginate through all results using NextToken
-	var nextToken *string
-	for {
-		stmt := &dynamodb.ExecuteStatementInput{
-			Statement:  aws.String(query),
-			Parameters: params,
-			NextToken:  nextToken,
-		}
-
-		res, err := db.dynamo.ExecuteStatement(ctx, stmt)
-		if err != nil {
-			return nil, fmt.Errorf("failed to execute statement: %w", err)
-		}
-
-		var records []struct {
-			Id         string                 `dynamodbav:"Id"`
-			Status     string                 `dynamodbav:"Status"`
-			Attributes map[string]interface{} `dynamodbav:"Attributes"`
-		}
-
-		if err := attributevalue.UnmarshalListOfMaps(res.Items, &records); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal records: %w", err)
-		}
-
-		allRecords = append(allRecords, records...)
-
-		// Check if there are more results
-		if res.NextToken == nil {
-			break
-		}
-		nextToken = res.NextToken
-	}
-
-	invalidEmails := make([]Email, 0, len(allRecords))
-	for _, record := range allRecords {
-		createdAtStr, _ := record.Attributes["CreatedAt"].(string)
-		updatedAtStr, _ := record.Attributes["UpdatedAt"].(string)
-		errorMessage, _ := record.Attributes["ErrorMessage"].(string)
-
-		createdAt, _ := time.Parse(time.RFC3339, createdAtStr)
-		updatedAt, _ := time.Parse(time.RFC3339, updatedAtStr)
-
-		invalidEmails = append(invalidEmails, Email{
-			Id:           record.Id,
-			Status:       record.Status,
-			CreatedAt:    createdAt,
-			UpdatedAt:    updatedAt,
-			ErrorMessage: errorMessage,
-		})
-	}
-
-	return invalidEmails, nil
+	return emails, nil
 }
 
-func (db *Database) RequeueEmail(ctx context.Context, id string) error {
-	// First, get the _META record to check the Latest status
-	getStmt := fmt.Sprintf(`SELECT Id, Status, Attributes, TTL FROM "%v" WHERE Id=? AND Status=?`, db.tableName)
-	getParams, err := attributevalue.MarshalList([]interface{}{id, statusMeta})
+func (d *Database) RequeueEmail(ctx context.Context, id string) error {
+	tx, err := d.db.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("failed to marshal get parameters: %w", err)
+		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
+	defer tx.Rollback()
 
-	getRes, err := db.dynamo.ExecuteStatement(ctx, &dynamodb.ExecuteStatementInput{
-		Statement:  aws.String(getStmt),
-		Parameters: getParams,
-	})
+	// Get current status and version
+	var currentStatus string
+	var version int
+	err = tx.QueryRowContext(ctx,
+		`SELECT status, version FROM emails WHERE id = ? FOR UPDATE`,
+		id,
+	).Scan(&currentStatus, &version)
 	if err != nil {
-		return fmt.Errorf("failed to get meta record: %w", err)
+		if err == sql.ErrNoRows {
+			return fmt.Errorf("email with id %s not found", id)
+		}
+		return fmt.Errorf("failed to get email: %w", err)
 	}
 
-	if len(getRes.Items) == 0 {
-		return fmt.Errorf("email with id %s not found", id)
-	}
-
-	var metaRecord struct {
-		Id         string                 `dynamodbav:"Id"`
-		Status     string                 `dynamodbav:"Status"`
-		Attributes map[string]interface{} `dynamodbav:"Attributes"`
-		TTL        int64                  `dynamodbav:"TTL"`
-	}
-
-	if err := attributevalue.UnmarshalMap(getRes.Items[0], &metaRecord); err != nil {
-		return fmt.Errorf("failed to unmarshal meta record: %w", err)
-	}
-
-	currentLatest, ok := metaRecord.Attributes["Latest"].(string)
-	if !ok {
-		return fmt.Errorf("latest status not found in meta record")
-	}
-
-	// Map the current Latest to the new status
+	// Map current status to new status
 	var newStatus string
-	switch currentLatest {
+	switch currentStatus {
 	case statusIntaking:
 		newStatus = statusInitial // ACCEPTED
 	case statusProcessing:
@@ -290,125 +184,46 @@ func (db *Database) RequeueEmail(ctx context.Context, id string) error {
 	case statusCallingFailedCallback:
 		newStatus = statusFailed
 	default:
-		return fmt.Errorf("cannot requeue email with Latest status: %s", currentLatest)
+		return fmt.Errorf("cannot requeue email with status: %s", currentStatus)
 	}
 
-	// Delete the record where Status = currentLatest
-	deleteStmt := fmt.Sprintf("DELETE FROM \"%v\" WHERE Id=? AND Status=?", db.tableName)
-	deleteParams, _ := attributevalue.MarshalList([]interface{}{id, currentLatest})
-
-	// Update the Latest field in the _META record
-	updateStmt := fmt.Sprintf("UPDATE \"%v\" SET Attributes.Latest=?, Attributes.UpdatedAt=? WHERE Id=? AND Status=?", db.tableName)
-	updateParams, _ := attributevalue.MarshalList([]interface{}{newStatus, time.Now().Format(time.RFC3339), id, statusMeta})
-
-	ti := &dynamodb.ExecuteTransactionInput{
-		TransactStatements: []types.ParameterizedStatement{
-			{Statement: aws.String(deleteStmt), Parameters: deleteParams},
-			{Statement: aws.String(updateStmt), Parameters: updateParams},
-		},
+	// Update email status with optimistic locking
+	result, err := tx.ExecContext(ctx,
+		`UPDATE emails SET status = ?, version = version + 1 WHERE id = ? AND version = ?`,
+		newStatus, id, version,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update email status: %w", err)
 	}
 
-	if _, err := db.dynamo.ExecuteTransaction(ctx, ti); err != nil {
-		return fmt.Errorf("failed to requeue email: %w", err)
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("email was modified by another process")
+	}
+
+	// Insert status change into history
+	_, err = tx.ExecContext(ctx,
+		`INSERT INTO email_statuses (email_id, status, reason) VALUES (?, ?, ?)`,
+		id, newStatus, fmt.Sprintf("Requeued from %s", currentStatus),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to insert status history: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return nil
 }
 
-func (db *Database) ScanAndSetTTL(ctx context.Context, ttlTimestamp int64, maxRecords int) (*ScanAndSetTTLResult, error) {
-	// Query for records without both TTL and Attributes.TTL
-	query := fmt.Sprintf(`SELECT Id, Status FROM "%v" WHERE TTL IS MISSING AND Attributes.TTL IS MISSING`, db.tableName)
-
-	var allRecords []struct {
-		Id     string `dynamodbav:"Id"`
-		Status string `dynamodbav:"Status"`
+// IsDuplicateEntryError checks if the error is a MySQL duplicate entry error
+func IsDuplicateEntryError(err error) bool {
+	if mysqlErr, ok := err.(*mysql.MySQLError); ok {
+		return mysqlErr.Number == mysqlDuplicateEntryCode
 	}
-
-	// Paginate through all results using NextToken
-	var nextToken *string
-	totalRecords := 0
-	hasMoreRecords := false
-
-	for {
-		if maxRecords > 0 && totalRecords >= maxRecords {
-			hasMoreRecords = true
-			break
-		}
-
-		stmt := &dynamodb.ExecuteStatementInput{
-			Statement: aws.String(query),
-			NextToken: nextToken,
-		}
-
-		res, err := db.dynamo.ExecuteStatement(ctx, stmt)
-		if err != nil {
-			return nil, fmt.Errorf("failed to execute scan statement: %w", err)
-		}
-
-		var records []struct {
-			Id     string `dynamodbav:"Id"`
-			Status string `dynamodbav:"Status"`
-		}
-
-		if err := attributevalue.UnmarshalListOfMaps(res.Items, &records); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal scan records: %w", err)
-		}
-
-		allRecords = append(allRecords, records...)
-		totalRecords += len(records)
-
-		// Check if there are more results
-		if res.NextToken == nil {
-			break
-		}
-		nextToken = res.NextToken
-	}
-
-	// Limit to maxRecords if specified
-	if maxRecords > 0 && len(allRecords) > maxRecords {
-		allRecords = allRecords[:maxRecords]
-		totalRecords = maxRecords
-		hasMoreRecords = true
-	}
-
-	// Process records in microbatches of 25
-	processedRecords := 0
-	batchSize := 25
-
-	for i := 0; i < len(allRecords); i += batchSize {
-		end := i + batchSize
-		if end > len(allRecords) {
-			end = len(allRecords)
-		}
-
-		batch := allRecords[i:end]
-
-		// Create transaction statements for this batch
-		var transactStatements []types.ParameterizedStatement
-		for _, record := range batch {
-			updateStmt := fmt.Sprintf("UPDATE \"%v\" SET TTL=? WHERE Id=? AND Status=?", db.tableName)
-			updateParams, _ := attributevalue.MarshalList([]interface{}{ttlTimestamp, record.Id, record.Status})
-			transactStatements = append(transactStatements, types.ParameterizedStatement{
-				Statement:  aws.String(updateStmt),
-				Parameters: updateParams,
-			})
-		}
-
-		// Execute transaction for this batch
-		ti := &dynamodb.ExecuteTransactionInput{
-			TransactStatements: transactStatements,
-		}
-
-		if _, err := db.dynamo.ExecuteTransaction(ctx, ti); err != nil {
-			return nil, fmt.Errorf("failed to execute update transaction for batch starting at index %d: %w", i, err)
-		}
-
-		processedRecords += len(batch)
-	}
-
-	return &ScanAndSetTTLResult{
-		ProcessedRecords: processedRecords,
-		TotalRecords:     totalRecords,
-		HasMoreRecords:   hasMoreRecords,
-	}, nil
+	return false
 }
