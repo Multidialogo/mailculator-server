@@ -293,6 +293,7 @@ class TaskDefinitionStack(Stack):
             id='db-secret',
             secret_name=environment_secrets_resolver.rds_instances_multicarrier_credentials_admin_secret_name
         )
+        db_secret.grant_read(task_execution_role)
 
         container.add_secret(
             name='MYSQL_HOST',
@@ -316,7 +317,7 @@ class TaskDefinitionStack(Stack):
 
         container.add_secret(
             name='MYSQL_DATABASE',
-            secret=ecs.Secret.from_secrets_manager(secret=db_secret, field='dbInstanceIdentifier')
+            secret=ecs.Secret.from_secrets_manager(secret=db_secret, field='dbname')
         )
 
         container.add_environment(
