@@ -19,7 +19,12 @@ func newAppServer() *http.Server {
 		return nil
 	}
 
-	appInstance := app.NewApp(cfg)
+	appInstance, err := app.NewApp(cfg)
+	if err != nil {
+		log.Panicf("error creating app: %v", err)
+		return nil
+	}
+
 	return appInstance.NewServer(cfg.Server.Port)
 }
 

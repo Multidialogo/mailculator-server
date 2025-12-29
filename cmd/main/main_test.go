@@ -3,22 +3,7 @@ package main
 import (
 	"net/http"
 	"testing"
-
-	"multicarrier-email-api/internal/email/testutils"
 )
-
-var databaseTestFacade *testutils.EmailDatabaseFacade
-
-func init() {
-	databaseTestFacade = testutils.NewEmailDatabaseFacade()
-}
-
-var fixtures []testutils.EmailTestFixtureKeys
-
-func tearDown() {
-	_ = databaseTestFacade.RemoveFixtures(fixtures)
-	fixtures = []testutils.EmailTestFixtureKeys{}
-}
 
 func mockNewAppServerFn(server *http.Server) func() *http.Server {
 	return func() *http.Server {
@@ -32,9 +17,13 @@ func TestIntegration(t *testing.T) {
 		return
 	}
 
-	defer tearDown()
-
+	// Integration test requires MySQL to be running
+	// Set MYSQL_DSN environment variable before running
 	server := newAppServer()
+	if server == nil {
+		t.Skip("could not create app server, likely missing MYSQL_DSN")
+		return
+	}
 	defer server.Close()
 
 	newAppServerFn = mockNewAppServerFn(server)

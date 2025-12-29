@@ -2,10 +2,7 @@ package email
 
 import (
 	"context"
-	"errors"
 	"log"
-
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
 const (
@@ -44,13 +41,6 @@ type databaseInterface interface {
 	GetStaleEmails(ctx context.Context) ([]Email, error)
 	GetInvalidEmails(ctx context.Context) ([]Email, error)
 	RequeueEmail(ctx context.Context, id string) error
-	ScanAndSetTTL(ctx context.Context, ttlTimestamp int64, maxRecords int) (*ScanAndSetTTLResult, error)
-}
-
-type ScanAndSetTTLResult struct {
-	ProcessedRecords int  `json:"processed_records"`
-	TotalRecords     int  `json:"total_records"`
-	HasMoreRecords   bool `json:"has_more_records"`
 }
 
 type Service struct {
@@ -63,16 +53,6 @@ func NewService(payloadStorage payloadStorageInterface, db databaseInterface) *S
 		payloadStorage: payloadStorage,
 		db:             db,
 	}
-}
-
-func (s *Service) isTransientError(err error) bool {
-	var provisionedThroughputErr *types.ProvisionedThroughputExceededException
-	var requestLimitErr *types.RequestLimitExceeded
-	var internalServerErr *types.InternalServerError
-
-	return errors.As(err, &provisionedThroughputErr) ||
-		errors.As(err, &requestLimitErr) ||
-		errors.As(err, &internalServerErr)
 }
 
 func (s *Service) tryDelete(payloadPath string) {
@@ -107,13 +87,9 @@ func (s *Service) Save(ctx context.Context, emailRequests []EmailRequest) []Save
 
 			result.Success = false
 
-			var dupErr *types.DuplicateItemException
-			if errors.As(err, &dupErr) {
+			if IsDuplicateEntryError(err) {
 				result.ErrorCode = ErrorCodeDuplicatedID
 				result.ErrorMessage = ErrorMessageDuplicatedID
-			} else if s.isTransientError(err) {
-				result.ErrorCode = ErrorCodeTransientError
-				result.ErrorMessage = ErrorMessageTransientError
 			} else {
 				result.ErrorCode = ErrorCodeDatabaseError
 				result.ErrorMessage = ErrorMessageDatabaseError
@@ -139,8 +115,4 @@ func (s *Service) GetInvalidEmails(ctx context.Context) ([]Email, error) {
 
 func (s *Service) RequeueEmail(ctx context.Context, id string) error {
 	return s.db.RequeueEmail(ctx, id)
-}
-
-func (s *Service) ScanAndSetTTL(ctx context.Context, ttlTimestamp int64, maxRecords int) (*ScanAndSetTTLResult, error) {
-	return s.db.ScanAndSetTTL(ctx, ttlTimestamp, maxRecords)
 }

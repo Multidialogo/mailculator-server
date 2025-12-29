@@ -1,11 +1,14 @@
-aws:
-  base-endpoint: "endpoint.local"
+mysql:
+  host: "${TEST_ENV_VAR}"
+  port: 3306
+  user: "root"
+  password: "password"
+  database: "mailculator"
 
 payload-storage:
   path: "/efs/json"
 
 outbox:
-  table-name: "${TEST_ENV_VAR}"
   stale-emails-threshold-minutes: 30
 
 server:

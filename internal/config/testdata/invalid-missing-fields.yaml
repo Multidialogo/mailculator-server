@@ -1,2 +1,5 @@
+mysql:
+  host: "localhost"
+
 outbox:
-  table-name: "Outbox"
+  stale-emails-threshold-minutes: 30

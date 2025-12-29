@@ -1,11 +1,11 @@
 package app
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	_ "github.com/go-sql-driver/mysql"
 
 	"multicarrier-email-api/internal/email"
 	"multicarrier-email-api/internal/healthcheck"
@@ -13,25 +13,42 @@ import (
 
 type App struct {
 	emailService *email.Service
+	db           *sql.DB
 }
 
 type configProvider interface {
-	GetAwsConfig() aws.Config
+	GetMySQLDSN() string
 	GetPayloadStoragePath() string
-	GetOutboxTableName() string
 	GetStaleEmailsThresholdMinutes() int
 }
 
-func NewApp(cp configProvider) *App {
-	payloadStorage := email.NewPayloadStorage(cp.GetPayloadStoragePath())
-	dynamo := dynamodb.NewFromConfig(cp.GetAwsConfig())
-	db := email.NewDatabase(dynamo, cp.GetOutboxTableName(), cp.GetStaleEmailsThresholdMinutes())
+func NewApp(cp configProvider) (*App, error) {
+	db, err := sql.Open("mysql", cp.GetMySQLDSN())
+	if err != nil {
+		return nil, fmt.Errorf("failed to open database connection: %w", err)
+	}
 
-	emailService := email.NewService(payloadStorage, db)
+	// Verify connection
+	if err := db.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to ping database: %w", err)
+	}
+
+	payloadStorage := email.NewPayloadStorage(cp.GetPayloadStoragePath())
+	emailDB := email.NewDatabase(db, cp.GetStaleEmailsThresholdMinutes())
+
+	emailService := email.NewService(payloadStorage, emailDB)
 
 	return &App{
 		emailService: emailService,
+		db:           db,
+	}, nil
+}
+
+func (a *App) Close() error {
+	if a.db != nil {
+		return a.db.Close()
 	}
+	return nil
 }
 
 func (a *App) NewServer(port int) *http.Server {
@@ -48,9 +65,6 @@ func (a *App) NewServer(port int) *http.Server {
 
 	requeueEmail := email.NewRequeueEmailHandler(a.emailService)
 	mux.Handle("POST /emails/{id}/requeue", requeueEmail)
-
-	scanAndSetTTL := email.NewScanAndSetTTLHandler(a.emailService)
-	mux.Handle("POST /scan-and-set-ttl", scanAndSetTTL)
 
 	health := new(healthcheck.Handler)
 	mux.Handle("GET /health-check", health)

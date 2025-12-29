@@ -13,6 +13,8 @@ from aws_cdk import (
 )
 from constructs import Construct
 
+from multidialogo_cdk_shared.environment_secrets_resolver import EnvironmentSecretsResolver
+
 MD_REST_VOLUME_NAME = 'rest-volume'
 MC_VOLUME_NAME = 'mc-volume'
 
@@ -27,6 +29,7 @@ class TaskDefinitionStack(Stack):
             env_parameters: dict,
             image_tag: str,
             dd_api_key_secret_name: str,
+            environment_secrets_resolver: EnvironmentSecretsResolver,
             **kwargs
     ) -> None:
         super().__init__(
@@ -285,32 +288,35 @@ class TaskDefinitionStack(Stack):
             value='true'
         )
 
-        table_name = ssm.StringParameter.value_from_lookup(
+        db_secret = secretsmanager.Secret.from_secret_name_v2(
             scope=self,
-            parameter_name=outbox_table_name_parameter_name,
+            id='db-secret',
+            secret_name=environment_secrets_resolver.rds_instances_multicarrier_credentials_name_secret_name
         )
 
-        table = dynamodb.Table.from_table_name(
-            scope=self,
-            id='table',
-            table_name=table_name
+        container.add_secret(
+            name='MYSQL_HOST',
+            secret=ecs.Secret.from_secrets_manager(secret=db_secret, field='host')
         )
 
-        table.grant_read_write_data(
-            grantee=task_definition.task_role
+        container.add_secret(
+            name='MYSQL_PORT',
+            secret=ecs.Secret.from_secrets_manager(secret=db_secret, field='port')
         )
 
-        table.grant(
-            task_definition.task_role,
-            'dynamodb:PartiQLSelect',
-            'dynamodb:PartiQLInsert',
-            'dynamodb:PartiQLUpdate',
-            'dynamodb:PartiQLDelete'
+        container.add_secret(
+            name='MYSQL_USER',
+            secret=ecs.Secret.from_secrets_manager(secret=db_secret, field='username')
         )
 
-        container.add_environment(
-            name='EMAIL_OUTBOX_TABLE',
-            value=table.table_name
+        container.add_secret(
+            name='MYSQL_PASSWORD',
+            secret=ecs.Secret.from_secrets_manager(secret=db_secret, field='password')
+        )
+
+        container.add_secret(
+            name='MYSQL_DATABASE',
+            secret=ecs.Secret.from_secrets_manager(secret=db_secret, field='dbInstanceIdentifier')
         )
 
         ssm.StringParameter(

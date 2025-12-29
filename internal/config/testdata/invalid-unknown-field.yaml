@@ -1,9 +1,13 @@
-aws:
-  region: "dummy-region-with-quotation-marks"
-  base-endpoint: dummy-base-endpoint
+mysql:
+  host: "localhost"
+  port: 3306
+  user: "root"
+  password: "password"
+  database: "mailculator"
+  unknown-field: "this-should-fail"
 
 outbox:
-  table-name: "Outbox"
+  stale-emails-threshold-minutes: 30
 
 server:
   port: 8080

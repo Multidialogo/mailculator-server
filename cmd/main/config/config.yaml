@@ -1,11 +1,14 @@
-aws:
-  base-endpoint: "${AWS_BASE_ENDPOINT}"
+mysql:
+  host: "${MYSQL_HOST}"
+  port: ${MYSQL_PORT}
+  user: "${MYSQL_USER}"
+  password: "${MYSQL_PASSWORD}"
+  database: "${MYSQL_DATABASE}"
 
 payload-storage:
   path: "${PAYLOAD_STORAGE_PATH}"
 
 outbox:
-  table-name: "${EMAIL_OUTBOX_TABLE}"
   stale-emails-threshold-minutes: 30
 
 server:
