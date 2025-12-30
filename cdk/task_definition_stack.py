@@ -322,7 +322,7 @@ class TaskDefinitionStack(Stack):
 
         container.add_environment(
             name='MYSQL_TLS',
-            value='skip-verify'
+            value='true'
         )
 
         ssm.StringParameter(
