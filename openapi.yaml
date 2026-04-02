@@ -50,10 +50,28 @@ paths:
                         type: string
                         description: "Plain text body content of the email"
                       attachments:
-                        type: array
-                        description: "Paths to attached files"
-                        items:
-                          type: string
+                        description: "Email attachments - can be array of strings (legacy) or array of objects (new format)"
+                        oneOf:
+                          - type: array
+                            description: "Legacy format: array of file paths (filename will be extracted from path)"
+                            items:
+                              type: string
+                              format: uri
+                          - type: array
+                            description: "New format: array of attachment objects with explicit path and name"
+                            items:
+                              type: object
+                              required:
+                                - path
+                                - name
+                              properties:
+                                path:
+                                  type: string
+                                  format: uri
+                                  description: "Path or URL to the file"
+                                name:
+                                  type: string
+                                  description: "Original filename as it should appear in the email"
                       custom_headers:
                         type: object
                         description: "Custom headers for the email"
@@ -142,9 +160,26 @@ components:
         body_text:
           type: string
         attachments:
-          type: array
-          items:
-            type: string
+          description: "Email attachments - can be array of strings (legacy) or array of objects (new format)"
+          oneOf:
+            - type: array
+              description: "Legacy format: array of file paths (filename will be extracted from path)"
+              items:
+                type: string
+                format: uri
+            - type: array
+              description: "New format: array of attachment objects with explicit path and name"
+              items:
+                type: object
+                required:
+                  - path
+                  - name
+                properties:
+                  path:
+                    type: string
+                    format: uri
+                  name:
+                    type: string
         custom_headers:
           type: object
           additionalProperties:

@@ -8,7 +8,16 @@
       "subject": "Test Subject",
       "body_html": "<p>Hello, World!</p>",
       "body_text": "Hello, World!",
-      "attachments": ["/TestHandleMailQueue/attachment01.pdf", "/TestHandleMailQueue/attachment02.pdf"]
+      "attachments": [
+        {
+          "path": "/TestHandleMailQueue/attachment01.pdf",
+          "name": "document.pdf"
+        },
+        {
+          "path": "/TestHandleMailQueue/attachment02.pdf",
+          "name": "invoice.pdf"
+        }
+      ]
     },
     {
       "id": "ff0fb587-e29b-4278-bbab-a525196b8917",
