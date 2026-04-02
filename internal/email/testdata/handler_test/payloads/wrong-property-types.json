@@ -8,7 +8,12 @@
       "subject": "Test Subject",
       "body_html": "<p>Hello, World!</p>",
       "body_text": "Hello, World!",
-      "attachments": ["/TestHandleMailQueue/attachment01.pdf", "/TestHandleMailQueue/attachment02.pdf"],
+      "attachments": [
+        {
+          "path": "/TestHandleMailQueue/attachment01.pdf",
+          "name": "document.pdf"
+        }
+      ],
       "custom_headers": {
         "X-Custom-Header": "CustomValue"
       }

@@ -144,6 +144,41 @@ func TestCreateEmailHandler_ServeHTTP(t *testing.T) {
 			expectedStatusCode: http.StatusBadRequest,
 			expectedBody:       `{"error": "error validating request body: Key: 'createEmailRequestBody.Data[0].BodyHTML' Error:Field validation for 'BodyHTML' failed on the 'required_without' tag\nKey: 'createEmailRequestBody.Data[0].BodyText' Error:Field validation for 'BodyText' failed on the 'required_without' tag"}`,
 		},
+		{
+			name:               "attachment missing path - 400",
+			serviceResults:     nil,
+			payloadFilePath:    "testdata/handler_test/payloads/invalid-attachments.json",
+			expectedStatusCode: http.StatusBadRequest,
+			expectedBody:       `{"error": "error validating request body: Key: 'createEmailRequestBody.Data[0].Attachments[1].Path' Error:Field validation for 'Path' failed on the 'required' tag"}`,
+		},
+		{
+			name:               "attachment missing name - 400",
+			serviceResults:     nil,
+			payloadFilePath:    "testdata/handler_test/payloads/attachment-missing-name.json",
+			expectedStatusCode: http.StatusBadRequest,
+			expectedBody:       `{"error": "error validating request body: Key: 'createEmailRequestBody.Data[0].Attachments[0].Name' Error:Field validation for 'Name' failed on the 'required' tag"}`,
+		},
+		{
+			name:               "attachment invalid uri - 400",
+			serviceResults:     nil,
+			payloadFilePath:    "testdata/handler_test/payloads/attachment-invalid-uri.json",
+			expectedStatusCode: http.StatusBadRequest,
+			expectedBody:       `{"error": "error validating request body: Key: 'createEmailRequestBody.Data[0].Attachments[0].Path' Error:Field validation for 'Path' failed on the 'uri' tag"}`,
+		},
+		{
+			name:               "legacy format with valid URIs - 201",
+			serviceResults:     nil,
+			payloadFilePath:    "testdata/handler_test/payloads/legacy-attachments-valid.json",
+			expectedStatusCode: http.StatusCreated,
+			expectedBody:       "{}",
+		},
+		{
+			name:               "legacy format with invalid URI - 400",
+			serviceResults:     nil,
+			payloadFilePath:    "testdata/handler_test/payloads/legacy-attachments-invalid-uri.json",
+			expectedStatusCode: http.StatusBadRequest,
+			expectedBody:       `{"error": "error validating request body: Key: 'createEmailRequestBody.Data[0].Attachments[0].Path' Error:Field validation for 'Path' failed on the 'uri' tag"}`,
+		},
 	}
 
 	for _, tc := range testCases {
