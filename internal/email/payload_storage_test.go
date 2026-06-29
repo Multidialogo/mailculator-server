@@ -7,47 +7,47 @@ import (
 	"testing"
 )
 
-func TestPayloadStorageStore(t *testing.T) {
-	// Setup
+func TestPayloadStorageResolvePath(t *testing.T) {
 	tmpDir := t.TempDir()
 	storage := NewPayloadStorage(tmpDir)
 
 	// Test data
 	messageId := "65ed6bfa-063c-5219-844d-e099c88a17f4"
-	payload := []byte("test payload data")
 
-	// Execute
-	path, err := storage.Store(messageId, payload)
+	path, err := storage.ResolvePath(messageId)
 
 	// Verify
 	if err != nil {
-		t.Errorf("expected no error, got %v", err)
+		t.Fatalf("expected no error, got %v", err)
 	}
 
-	if path == "" {
-		t.Errorf("expected non-empty path")
+	if filepath.Base(path) != messageId+".json" {
+		t.Errorf("expected filename %s.json, got %s", messageId, filepath.Base(path))
 	}
 
-	// Verify file exists
-	if _, err := os.Stat(path); err != nil {
-		t.Errorf("expected file to exist at %s: %v", path, err)
+	dirPath := filepath.Dir(path)
+	if _, err := os.Stat(dirPath); err != nil {
+		t.Errorf("expected directory to be created at %s: %v", dirPath, err)
 	}
 
-	// Verify file content
-	content, err := os.ReadFile(path)
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Errorf("expected file not to exist yet at %s", path)
+	}
+}
+
+func TestPayloadStorageResolvePathYearMonthStructure(t *testing.T) {
+	tmpDir := t.TempDir()
+	storage := NewPayloadStorage(tmpDir)
+
+	messageId := "65ed6bfa-063c-5219-844d-e099c88a17f4"
+
+	path, err := storage.ResolvePath(messageId)
 	if err != nil {
-		t.Errorf("failed to read file: %v", err)
+		t.Fatalf("expected no error, got %v", err)
 	}
 
-	if string(content) != string(payload) {
-		t.Errorf("expected payload %s, got %s", string(payload), string(content))
-	}
-
-	// Verify filename contains the messageId
-	fileName := filepath.Base(path)
-	expectedFileName := messageId + ".json"
-	if fileName != expectedFileName {
-		t.Errorf("expected filename %s, got %s", expectedFileName, fileName)
+	if !strings.HasPrefix(path, tmpDir) {
+		t.Errorf("expected path to be under %s, got %s", tmpDir, path)
 	}
 
 	// Verify file exists in the correct year/month structure
@@ -63,6 +63,66 @@ func TestPayloadStorageStore(t *testing.T) {
 	}
 }
 
+func TestPayloadStorageWrite(t *testing.T) {
+	tmpDir := t.TempDir()
+	storage := NewPayloadStorage(tmpDir)
+
+	messageId := "65ed6bfa-063c-5219-844d-e099c88a17f4"
+	payload := []byte("test payload data")
+
+	path, err := storage.ResolvePath(messageId)
+	if err != nil {
+		t.Fatalf("failed to resolve path: %v", err)
+	}
+
+	if err := storage.Write(path, payload); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if _, err := os.Stat(path); err != nil {
+		t.Errorf("expected file to exist at %s: %v", path, err)
+	}
+
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("failed to read file: %v", err)
+	}
+
+	if string(content) != string(payload) {
+		t.Errorf("expected payload %s, got %s", string(payload), string(content))
+	}
+}
+
+func TestPayloadStorageWriteOverwritesExistingFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	storage := NewPayloadStorage(tmpDir)
+
+	messageId := "65ed6bfa-063c-5219-844d-e099c88a17f4"
+
+	path, err := storage.ResolvePath(messageId)
+	if err != nil {
+		t.Fatalf("failed to resolve path: %v", err)
+	}
+
+	if err := storage.Write(path, []byte("original payload")); err != nil {
+		t.Fatalf("first write failed: %v", err)
+	}
+
+	newPayload := []byte("overwritten payload")
+	if err := storage.Write(path, newPayload); err != nil {
+		t.Fatalf("second write failed: %v", err)
+	}
+
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("failed to read file: %v", err)
+	}
+
+	if string(content) != string(newPayload) {
+		t.Errorf("expected overwritten payload, got %s", string(content))
+	}
+}
+
 func TestPayloadStorageUniqueFilenames(t *testing.T) {
 	// Setup
 	tmpDir := t.TempDir()
@@ -74,12 +134,20 @@ func TestPayloadStorageUniqueFilenames(t *testing.T) {
 	payload1 := []byte("payload 1")
 	payload2 := []byte("payload 2")
 
-	path1, err1 := storage.Store(messageId1, payload1)
-	path2, err2 := storage.Store(messageId2, payload2)
+	path1, err := storage.ResolvePath(messageId1)
+	if err != nil {
+		t.Fatalf("failed to resolve path1: %v", err)
+	}
+	if err := storage.Write(path1, payload1); err != nil {
+		t.Fatalf("failed to write payload1: %v", err)
+	}
 
-	// Verify
-	if err1 != nil || err2 != nil {
-		t.Errorf("expected no errors, got %v and %v", err1, err2)
+	path2, err := storage.ResolvePath(messageId2)
+	if err != nil {
+		t.Fatalf("failed to resolve path2: %v", err)
+	}
+	if err := storage.Write(path2, payload2); err != nil {
+		t.Fatalf("failed to write payload2: %v", err)
 	}
 
 	if path1 == path2 {
@@ -98,37 +166,11 @@ func TestPayloadStorageUniqueFilenames(t *testing.T) {
 		t.Errorf("expected payload2, got %s", string(content2))
 	}
 
-	// Verify filename matches messageId
-	fileName1 := filepath.Base(path1)
-	fileName2 := filepath.Base(path2)
-	if fileName1 != messageId1+".json" {
-		t.Errorf("expected filename %s, got %s", messageId1+".json", fileName1)
+	if filepath.Base(path1) != messageId1+".json" {
+		t.Errorf("expected filename %s, got %s", messageId1+".json", filepath.Base(path1))
 	}
-	if fileName2 != messageId2+".json" {
-		t.Errorf("expected filename %s, got %s", messageId2+".json", fileName2)
-	}
-}
-
-func TestPayloadStorageDirectoryCreation(t *testing.T) {
-	// Setup
-	tmpDir := t.TempDir()
-	storage := NewPayloadStorage(tmpDir)
-
-	messageId := "65ed6bfa-063c-5219-844d-e099c88a17f4"
-	payload := []byte("test payload")
-
-	// Execute
-	path, err := storage.Store(messageId, payload)
-
-	// Verify
-	if err != nil {
-		t.Errorf("expected no error, got %v", err)
-	}
-
-	// Verify directory structure was created
-	dirPath := filepath.Dir(path)
-	if _, err := os.Stat(dirPath); err != nil {
-		t.Errorf("expected directory to be created at %s: %v", dirPath, err)
+	if filepath.Base(path2) != messageId2+".json" {
+		t.Errorf("expected filename %s, got %s", messageId2+".json", filepath.Base(path2))
 	}
 }
 
@@ -138,12 +180,13 @@ func TestPayloadStorageDelete(t *testing.T) {
 	storage := NewPayloadStorage(tmpDir)
 
 	messageId := "65ed6bfa-063c-5219-844d-e099c88a17f4"
-	payload := []byte("test payload")
 
-	// Create a file first
-	path, err := storage.Store(messageId, payload)
+	path, err := storage.ResolvePath(messageId)
 	if err != nil {
-		t.Fatalf("failed to store payload: %v", err)
+		t.Fatalf("failed to resolve path: %v", err)
+	}
+	if err := storage.Write(path, []byte("test payload")); err != nil {
+		t.Fatalf("failed to write payload: %v", err)
 	}
 
 	// Verify file exists
@@ -180,4 +223,3 @@ func TestPayloadStorageDeleteNonExistentFile(t *testing.T) {
 		t.Errorf("expected no error when deleting non-existent file, got %v", err)
 	}
 }
-
