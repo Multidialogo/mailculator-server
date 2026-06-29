@@ -2,7 +2,7 @@
 
 script_dir=$(dirname "$(realpath -s "$0")")
 
-if ! docker compose -f "$script_dir/compose.yml" --profile test-deps up -d --build --force-recreate; then
+if ! docker compose -f "$script_dir/compose.yml" --profile test-deps up -d --build --force-recreate --wait; then
   echo "Could not start test dependencies"
   exit 1
 fi

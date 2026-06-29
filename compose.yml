@@ -60,7 +60,7 @@ services:
     profiles:
       - 'test-deps'
     image: golang:1.25-alpine
-    command: ['echo', 'Service mysql-test is ready']
+    command: ['sh', '-c', 'echo "Service mysql-test is ready" && sleep 3']
     networks:
       - mailculator-api-deployments-net
     depends_on:

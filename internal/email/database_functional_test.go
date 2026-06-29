@@ -60,13 +60,13 @@ func TestOutboxComponentWorkflow(t *testing.T) {
 	firstId := uuid.NewString()
 	defer cleanupEmail(t, db, firstId)
 
-	err := sut.Insert(ctx, firstId, "/payload/path1.json")
+	err := sut.Insert(ctx, firstId, "/payload/path1.json", nil)
 	require.NoErrorf(t, err, "failed inserting id %s, error: %v", firstId, err)
 
 	secondId := uuid.NewString()
 	defer cleanupEmail(t, db, secondId)
 
-	err = sut.Insert(ctx, secondId, "/payload/path2.json")
+	err = sut.Insert(ctx, secondId, "/payload/path2.json", nil)
 	require.NoErrorf(t, err, "failed inserting id %s, error: %v", secondId, err)
 
 	// verify records exist with ACCEPTED status
@@ -81,7 +81,7 @@ func TestOutboxComponentWorkflow(t *testing.T) {
 	require.Equal(t, 2, count)
 
 	// should not be able to insert again same id
-	err = sut.Insert(ctx, firstId, "/")
+	err = sut.Insert(ctx, firstId, "/", nil)
 	require.Errorf(t, err, "inserted id %s, but it should have not because it's duplicated", firstId)
 	require.True(t, IsDuplicateEntryError(err))
 }
@@ -112,7 +112,7 @@ func TestGetStaleEmails(t *testing.T) {
 	recentId := uuid.NewString()
 	defer cleanupEmail(t, db, recentId)
 
-	err = sut.Insert(ctx, recentId, "/payload/recent.json")
+	err = sut.Insert(ctx, recentId, "/payload/recent.json", nil)
 	require.NoError(t, err)
 
 	// Get stale emails

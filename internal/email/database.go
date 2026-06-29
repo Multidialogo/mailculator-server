@@ -40,6 +40,13 @@ const (
 	mysqlDuplicateEntryCode = 1062
 )
 
+type commitError struct {
+	err error
+}
+
+func (e *commitError) Error() string { return e.err.Error() }
+func (e *commitError) Unwrap() error { return e.err }
+
 type Database struct {
 	db                          *sql.DB
 	staleEmailsThresholdMinutes int
@@ -52,7 +59,7 @@ func NewDatabase(db *sql.DB, staleEmailsThresholdMinutes int) *Database {
 	}
 }
 
-func (d *Database) Insert(ctx context.Context, id string, payloadFilePath string) error {
+func (d *Database) Insert(ctx context.Context, id string, payloadFilePath string, onEmailInserted func() error) error {
 	tx, err := d.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
@@ -68,7 +75,6 @@ func (d *Database) Insert(ctx context.Context, id string, payloadFilePath string
 		return err
 	}
 
-	// Insert initial status into email_statuses
 	_, err = tx.ExecContext(ctx,
 		`INSERT INTO email_statuses (email_id, status) VALUES (?, ?)`,
 		id, statusInitial,
@@ -77,8 +83,19 @@ func (d *Database) Insert(ctx context.Context, id string, payloadFilePath string
 		return fmt.Errorf("failed to insert status history: %w", err)
 	}
 
+	// The transaction scope intentionally covers the onEmailInserted callback to ensure
+	// atomicity between the database records and the payload file on disk. The INSERTs
+	// above act as an atomic lock, preventing concurrent requests with the same ID from
+	// interfering. If the callback (payload file write) fails, the transaction is rolled
+	// back, leaving no orphan records.
+	if onEmailInserted != nil {
+		if err := onEmailInserted(); err != nil {
+			return err
+		}
+	}
+
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
+		return &commitError{err: fmt.Errorf("failed to commit transaction: %w", err)}
 	}
 
 	return nil
