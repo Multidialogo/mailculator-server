@@ -2,6 +2,7 @@ package email
 
 import (
 	"context"
+	"errors"
 	"log"
 )
 
@@ -31,13 +32,21 @@ type SaveResult struct {
 	ErrorMessage string
 }
 
+type storageError struct {
+	err error
+}
+
+func (e *storageError) Error() string { return e.err.Error() }
+func (e *storageError) Unwrap() error { return e.err }
+
 type payloadStorageInterface interface {
-	Store(messageId string, payload []byte) (string, error)
+	ResolvePath(messageId string) (string, error)
+	Write(path string, payload []byte) error
 	Delete(payloadPath string) error
 }
 
 type databaseInterface interface {
-	Insert(ctx context.Context, id string, payloadPath string) error
+	Insert(ctx context.Context, id string, payloadPath string, onEmailInserted func() error) error
 	GetStaleEmails(ctx context.Context) ([]Email, error)
 	GetInvalidEmails(ctx context.Context) ([]Email, error)
 	RequeueEmail(ctx context.Context, id string) error
@@ -70,9 +79,9 @@ func (s *Service) Save(ctx context.Context, emailRequests []EmailRequest) []Save
 			Success:   true,
 		}
 
-		payloadPath, err := s.payloadStorage.Store(req.MessageId, req.PayloadBytes)
+		payloadPath, err := s.payloadStorage.ResolvePath(req.MessageId)
 		if err != nil {
-			log.Printf("failed to create payload file for '%s': %v", req.MessageId, err)
+			log.Printf("failed to resolve payload path for '%s': %v", req.MessageId, err)
 			result.Success = false
 			result.ErrorCode = ErrorCodeStorageError
 			result.ErrorMessage = ErrorMessageStorageError
@@ -80,16 +89,29 @@ func (s *Service) Save(ctx context.Context, emailRequests []EmailRequest) []Save
 			continue
 		}
 
-		if err := s.db.Insert(ctx, req.MessageId, payloadPath); err != nil {
-			log.Printf("failed to insert record in database for '%s': %v", req.MessageId, err)
+		err = s.db.Insert(ctx, req.MessageId, payloadPath, func() error {
+			if writeErr := s.payloadStorage.Write(payloadPath, req.PayloadBytes); writeErr != nil {
+				return &storageError{err: writeErr}
+			}
+			return nil
+		})
 
-			s.tryDelete(payloadPath)
+		if err != nil {
+			var cErr *commitError
+			if errors.As(err, &cErr) {
+				s.tryDelete(payloadPath)
+			}
 
+			log.Printf("failed to save email '%s': %v", req.MessageId, err)
 			result.Success = false
 
+			var stErr *storageError
 			if IsDuplicateEntryError(err) {
 				result.ErrorCode = ErrorCodeDuplicatedID
 				result.ErrorMessage = ErrorMessageDuplicatedID
+			} else if errors.As(err, &stErr) {
+				result.ErrorCode = ErrorCodeStorageError
+				result.ErrorMessage = ErrorMessageStorageError
 			} else {
 				result.ErrorCode = ErrorCodeDatabaseError
 				result.ErrorMessage = ErrorMessageDatabaseError

@@ -28,7 +28,7 @@ coverage() {
   rm $temp_path
 }
 
-if ! docker compose -f "$script_dir/compose.yml" --profile test-deps up -d --build --force-recreate; then
+if ! docker compose -f "$script_dir/compose.yml" --profile test-deps up -d --build --force-recreate --wait; then
   echo "Could not start test dependencies"
   docker compose -f "$script_dir/compose.yml" --profile test-deps down --remove-orphans
   exit 1
